@@ -10,7 +10,9 @@ Upload packs to RawCullBrowse's App Store Connect record using these exact ident
 | SAM 3 | `rawcullbrowse-sam3` | `Models/SAM3` |
 | Qwen | `rawcullbrowse-qwen3-vl-2b` | `Models/Qwen/qwen3_vl_2b` |
 
-Repackage the original converted models with the matching notices and new pack identifiers. Record new archive hashes, sizes and Apple processing evidence after packaging. The copied archive hashes describe the original archives and will change if packaging changes. No model binaries are checked in.
+All three packs were repackaged and uploaded successfully to RawCullBrowse (Apple ID `6818066038`). Each `altool` receipt reports version **1**, with zero errors, warnings, or info messages. The pack UUIDs, version UUIDs, and upload file UUIDs are recorded in the [release procedure](../Docs/releaseprocedure.md#completed-upload-receipts). App Store Connect processing and approval remain to be verified.
+
+For future releases, repackage the original converted models with the matching notices and established pack identifiers. Record new archive hashes, sizes and Apple processing evidence after packaging. The copied archive hashes describe the original archives and will change if packaging changes. No model binaries are checked in.
 
 Register `group.no.blogspot.RawCullBrowse.model-assets` for both bundle identifiers and regenerate signing profiles. Validate managed downloads through Apple's local Background Assets testing tools or TestFlight after uploads finish. Xcode unit-test hosts disable the live service and use injected fakes.
 

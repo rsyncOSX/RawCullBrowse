@@ -1,6 +1,6 @@
 # RawCullBrowse release procedure
 
-Prepared 1 October 2026. This runbook covers developer-account registration, signing, packaging existing converted models with RawCullBrowse's own asset pack IDs, uploads, internal TestFlight, and the first Mac App Store submission. Account actions and uploads have not been performed by creating this document.
+Prepared 1 October 2026. This runbook covers developer-account registration, signing, packaging existing converted models with RawCullBrowse's own asset pack IDs, uploads, internal TestFlight, and the first Mac App Store submission. All three RawCullBrowse asset packs have been uploaded successfully using `altool`; the supplied delivery logs report version 1 with zero errors, warnings, or info messages for each pack. App Store Connect processing, internal testing, and App Review still need verification.
 
 ## 1. Register the app, downloader, and shared app group
 
@@ -169,7 +169,7 @@ shasum -a 256 /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/clip-dataco
 | `sam3.aar` | Record after packaging | Record after packaging |
 | `qwen3-vl-2b.aar` | Record after packaging | Record after packaging |
 
-These packages have not been created by writing this runbook. Record their measured values before uploading, and check again against that record before each delivery. Update archive hash/size metadata displayed by the app where applicable to describe the new packages; retain the established model-file checksums.
+These packages have been created and uploaded successfully. Their measured hashes and sizes were not included in the supplied upload logs and remain to be recorded. Check each archive against that record before any future delivery. Update archive hash/size metadata displayed by the app where applicable to describe the new packages; retain the established model-file checksums.
 
 The repository's `ModelAssets/Notices/*/PROVENANCE.json` records describe RawCull's original releases. Keep those historical records distinguishable from new RawCullBrowse upload evidence. Do not copy RawCull's pack-record IDs, version-record IDs, or approval states into a RawCullBrowse release record.
 
@@ -180,7 +180,7 @@ The repository's `ModelAssets/Notices/*/PROVENANCE.json` records describe RawCul
 Apple documents `altool` asset upload with an archive path, the app's numeric Apple ID, and account credentials. Use an account with Account Holder, Admin, App Manager, or Developer access. See [Upload Apple-hosted asset packs](https://developer.apple.com/help/app-store-connect/manage-asset-packs/upload-apple-hosted-asset-packs).
 
 1. Confirm the active Xcode installation using `xcode-select -p` and `xcodebuild -version`.
-2. Run `xcrun altool --help` and confirm it works before starting a multi-gigabyte upload. During preparation of this runbook, the local invocation failed because `Defaults.properties` was missing; the command-line upload route needs that tooling issue resolved first. Transporter is the alternative below.
+2. Run `xcrun altool --help` and confirm it works before starting a multi-gigabyte upload. An earlier local invocation failed because `Defaults.properties` was missing, but all three subsequent uploads succeeded using `/Applications/Xcode.app/Contents/SharedFrameworks/ContentDelivery.framework/Resources/altool`. Transporter remains an alternative below.
 3. Authenticate using the App Store Connect API private key at `/Users/thomas/AuthKey_94B3QRRAMZ.p8` (key ID `94B3QRRAMZ`). Each command sets `API_PRIVATE_KEYS_DIR=/Users/thomas` so `altool` can find that file. Keep the private key outside the repository.
 4. The commands below use **RawCullBrowse's numeric Apple ID `6818066038`** and App Store Connect issuer ID `69a6de6f-0535-47e3-e053-5b8c7c11a4d1`.
 5. Upload CLIP first:
@@ -216,7 +216,21 @@ API_PRIVATE_KEYS_DIR=/Users/thomas xcrun altool \
 
 9. Save delivery logs and upload dates. A completed transfer is not the same as completed Apple processing.
 
-Apple assigns pack versions automatically; do not assume RawCullBrowse's versions match RawCull's.
+Apple assigns pack versions automatically; all three uploads below returned version **1**. Do not assume RawCullBrowse's versions match RawCull's.
+
+### Completed upload receipts
+
+The supplied `altool` logs confirm successful delivery of all three archives to Apple ID `6818066038`, with **0 errors, 0 warnings, and 0 info messages** each. Upload timestamps were not included in the supplied logs. These receipts confirm delivery; processing and review status must be checked separately in App Store Connect.
+
+| Receipt field | DataComp CLIP | SAM 3 | Qwen |
+| --- | --- | --- | --- |
+| Archive | `clip-datacomp.aar` | `sam3.aar` | `qwen3-vl-2b.aar` |
+| Asset pack identifier | `rawcullbrowse-clip-datacomp` | `rawcullbrowse-sam3` | `rawcullbrowse-qwen3-vl-2b` |
+| Asset pack version | `1` | `1` | `1` |
+| Asset pack UUID | `97c5718d-4b91-48c8-9a8d-413d7e4e589d` | `8396ac47-05ad-42ce-8a16-d16401cc64a6` | `7d49983a-8efd-4427-9ef2-622ff78964db` |
+| Asset pack version UUID | `7c9fbab3-fa88-491a-8d5f-3e5cc6dc1801` | `3246601e-9a89-44b5-b8c8-4f00be003568` | `10f23173-3760-4b4d-9c44-e5e8fdfa26e7` |
+| Manifest upload file UUID | `a8ec2ab6-ad06-46c2-8920-24d988a5ec3c` | `aa97d08e-43b3-4dcf-a052-c887884ae2a7` | `76335658-cabd-430d-bcb0-9869ea6c7561` |
+| Asset upload file UUID | `34acb26f-7687-4c0a-8de8-e0e163a69853` | `3620cd38-fa12-4430-9c89-ba6822134bda` | `6306bea5-e37b-481f-899e-c13197a8970a` |
 
 ### Transporter alternative
 
@@ -234,12 +248,12 @@ Record outside the archive:
 
 | Evidence | CLIP | SAM 3 | Qwen |
 | --- | --- | --- | --- |
-| RawCullBrowse pack ID | | | |
+| RawCullBrowse pack ID | `rawcullbrowse-clip-datacomp` | `rawcullbrowse-sam3` | `rawcullbrowse-qwen3-vl-2b` |
 | Archive SHA-256 and bytes | | | |
-| Upload date and delivery log | | | |
-| RawCullBrowse pack record ID | | | |
-| Version and version record ID | | | |
-| Processing result/date | | | |
+| Upload date and delivery log | Date not supplied; receipt in section 5 | Date not supplied; receipt in section 5 | Date not supplied; receipt in section 5 |
+| RawCullBrowse pack record ID | `97c5718d-4b91-48c8-9a8d-413d7e4e589d` | `8396ac47-05ad-42ce-8a16-d16401cc64a6` | `7d49983a-8efd-4427-9ef2-622ff78964db` |
+| Version and version record ID | `1` / `7c9fbab3-fa88-491a-8d5f-3e5cc6dc1801` | `1` / `3246601e-9a89-44b5-b8c8-4f00be003568` | `1` / `10f23173-3760-4b4d-9c44-e5e8fdfa26e7` |
+| Processing result/date | Pending verification | Pending verification | Pending verification |
 | Internal testing result | | | |
 | App Store review result | | | |
 
@@ -310,6 +324,6 @@ Select manual app release if you want a final launch checkpoint. After release, 
 | `.aar` checksum differs | Identify changed archive bytes; do not claim the historical hash describes a new package |
 | Internal testing changes unexpectedly | Check whether someone uploaded a newer processed pack version |
 | Cannot submit asset for review | Check packaging tool was a release version and required submission metadata is complete |
-| `altool` cannot start | Repair/select the intended Xcode tooling or use Transporter/API; local help currently reports missing `Defaults.properties` |
+| `altool` cannot start | Repair/select the intended Xcode tooling or use Transporter/API; an earlier invocation reported missing `Defaults.properties`; subsequent uploads succeeded |
 
 Preserve delivered archives and release evidence. For model updates, upload a new version under the established pack ID and test it before review. Recheck compatibility with already released app builds before promoting assets. Do not archive a pack as a routine rollback: Apple says this removes all versions, is irreversible, and prevents reuse of the ID. See [Asset-pack lifecycle](https://developer.apple.com/help/app-store-connect/test-a-beta-version/test-apple-hosted-asset-packs/).
