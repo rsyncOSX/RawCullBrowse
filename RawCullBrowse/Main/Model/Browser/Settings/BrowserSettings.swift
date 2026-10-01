@@ -1,5 +1,10 @@
 import Foundation
 
+nonisolated enum RAWPreviewBitDepth: String, Codable, CaseIterable, Sendable {
+    case eightBit
+    case sixteenBit
+}
+
 nonisolated struct BrowserSettings: Codable, Equatable, Sendable {
     nonisolated static let defaultMemoryCacheSizeMB = 768
     nonisolated static let defaultGridCacheSizeMB = 768
@@ -12,6 +17,7 @@ nonisolated struct BrowserSettings: Codable, Equatable, Sendable {
     var thumbnailSizeGrid = 200
     var thumbnailSizePreview = 1616
     var thumbnailSizeFullSize = 8700
+    var rawPreviewBitDepth: RAWPreviewBitDepth = .eightBit
     var clipModelPath: String?
     var clipModelBookmarkData: Data?
     var selectedCLIPModel = CLIPManagedModel.defaultSelection
@@ -29,6 +35,7 @@ nonisolated struct BrowserSettings: Codable, Equatable, Sendable {
         case thumbnailSizeGrid
         case thumbnailSizePreview
         case thumbnailSizeFullSize
+        case rawPreviewBitDepth
         case clipModelPath
         case clipModelBookmarkData
         case selectedCLIPModel
@@ -61,6 +68,7 @@ nonisolated struct BrowserSettings: Codable, Equatable, Sendable {
         thumbnailSizeGrid = try container.decodeIfPresent(Int.self, forKey: .thumbnailSizeGrid) ?? thumbnailSizeGrid
         thumbnailSizePreview = try container.decodeIfPresent(Int.self, forKey: .thumbnailSizePreview) ?? thumbnailSizePreview
         thumbnailSizeFullSize = try container.decodeIfPresent(Int.self, forKey: .thumbnailSizeFullSize) ?? thumbnailSizeFullSize
+        rawPreviewBitDepth = try container.decodeIfPresent(RAWPreviewBitDepth.self, forKey: .rawPreviewBitDepth) ?? .eightBit
         clipModelPath = try container.decodeIfPresent(String.self, forKey: .clipModelPath)
         clipModelBookmarkData = try container.decodeIfPresent(Data.self, forKey: .clipModelBookmarkData)
         selectedCLIPModel = try container.decodeIfPresent(

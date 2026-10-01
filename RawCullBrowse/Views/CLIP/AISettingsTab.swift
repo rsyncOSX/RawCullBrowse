@@ -26,12 +26,20 @@ struct AISettingsTab: View {
                     Spacer()
                 }
 
-                Text("""
-                Downloaded models are used automatically. A folder selected in Manual AI overrides \
-                the downloaded model until the selection is cleared.
-                """)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                Text("Downloaded models are used automatically.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Section("Semantic Search") {
+                LabeledContent("Maximum results") {
+                    Stepper(value: Binding(
+                        get: { viewModel.semanticSearchLimit },
+                        set: { viewModel.adjustSemanticSearchLimit(by: $0 - viewModel.semanticSearchLimit) },
+                    ), in: 10 ... 500, step: 10) {
+                        Text(viewModel.semanticSearchLimit, format: .number)
+                            .monospacedDigit()
+                    }
+                }
             }
         }
         .formStyle(.grouped)
@@ -39,5 +47,29 @@ struct AISettingsTab: View {
             CLIPModelDownloadsView(viewModel: viewModel)
         }
         .task { await viewModel.refreshCLIPModels() }
+    }
+}
+
+struct AIModelStatusRow: View {
+    let name: String
+    let state: CLIPModelDownloadState
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(name)
+
+            Spacer()
+
+            if state.isInstalled {
+                Label("Installed", systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            } else {
+                Text(state.title)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(name) model")
+        .accessibilityValue(String(localized: state.title))
     }
 }

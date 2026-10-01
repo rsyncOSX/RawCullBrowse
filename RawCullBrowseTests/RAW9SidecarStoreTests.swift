@@ -10,7 +10,7 @@ struct RAW9SidecarStoreTests {
         return directory.appendingPathComponent("photo.ARW")
     }
 
-    @Test func savesRestoresAndResetsWithoutChangingOriginal() async throws {
+    @Test func `saves restores and resets without changing original`() async throws {
         let raw = try temporaryRAW()
         defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
         let original = Data("original raw bytes".utf8)
@@ -29,9 +29,9 @@ struct RAW9SidecarStoreTests {
     @Test(arguments: [
         "not JSON",
         #"{"version":2,"adjustments":{"exposure":0,"noiseReduction":0,"sharpness":0,"contrast":0}}"#,
-        #"{"version":1,"adjustments":{"exposure":10,"noiseReduction":0,"sharpness":0,"contrast":0}}"#,
+        #"{"version":1,"adjustments":{"exposure":10,"noiseReduction":0,"sharpness":0,"contrast":0}}"#
     ])
-    func rejectsInvalidSidecars(contents: String) async throws {
+    func `rejects invalid sidecars`(contents: String) async throws {
         let raw = try temporaryRAW()
         defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
         try Data(contents.utf8).write(to: RAW9SidecarStore.sidecarURL(for: raw))

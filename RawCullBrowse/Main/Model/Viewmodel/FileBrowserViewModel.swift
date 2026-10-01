@@ -29,7 +29,9 @@ final class FileBrowserViewModel {
                   let url = raw9AdjustmentURL else { return }
             let adjustments = raw9Adjustments
             let previousSave = raw9SidecarSaveTask
-            if raw9SidecarSaveURL == url { previousSave?.cancel() }
+            if raw9SidecarSaveURL == url {
+                previousSave?.cancel()
+            }
             raw9SidecarSaveURL = url
             // Coalesce drag events, preserve write order across files, and finish
             // the final save even after navigating away or closing zoom.
@@ -39,7 +41,9 @@ final class FileBrowserViewModel {
                     try await Task.sleep(for: .milliseconds(300))
                     try Task.checkCancellation()
                     try await raw9SidecarStore.save(adjustments, for: url)
-                    if raw9AdjustmentURL == url { raw9SidecarError = nil }
+                    if raw9AdjustmentURL == url {
+                        raw9SidecarError = nil
+                    }
                 } catch is CancellationError {
                     return
                 } catch {
@@ -50,6 +54,7 @@ final class FileBrowserViewModel {
             }
         }
     }
+
     var raw9SidecarError: String?
     private var isRestoringRAW9Adjustments = false
     private let raw9SidecarStore = RAW9SidecarStore()
@@ -58,6 +63,18 @@ final class FileBrowserViewModel {
     private var raw9AdjustmentURL: URL?
     private var raw9LoadedSidecarURL: URL?
     private let raw9Renderer = RAW9PreviewRenderer()
+    var rawPreviewBitDepth: RAWPreviewBitDepth {
+        get { settings.rawPreviewBitDepth }
+        set {
+            guard settings.rawPreviewBitDepth != newValue else { return }
+            settings.rawPreviewBitDepth = newValue
+            persistSettings()
+            if zoomOverlayVisible, useDevelopedRAW, raw9LoadedSidecarURL == selectedFile?.url {
+                refreshRAW9Preview()
+            }
+        }
+    }
+
     var useDevelopedRAW = false
     var zoomImageError: String?
     var zoomImage: CGImage?
@@ -265,6 +282,14 @@ final class FileBrowserViewModel {
 
     func loadSettings() async {
         settings = await BrowserSettingsStore.load()
+        // Downloaded models are the only model source. Drop legacy folder overrides.
+        settings.clipModelPath = nil
+        settings.clipModelBookmarkData = nil
+        settings.qwenModelPath = nil
+        settings.qwenModelBookmarkData = nil
+        settings.sam3ModelPath = nil
+        settings.sam3ModelBookmarkData = nil
+        persistSettings()
         await MemoryImageCache.shared.apply(settings: settings)
         activateSavedQwenModel()
         await refreshCLIPModels()
@@ -1199,7 +1224,9 @@ final class FileBrowserViewModel {
         let initialAdjustments = raw9Adjustments
         let pendingSave = raw9SidecarSaveTask
         zoomTask?.cancel()
-        if !preserveViewport { zoomImage = nil }
+        if !preserveViewport {
+            zoomImage = nil
+        }
         zoomImageError = nil
         zoomExifInfo = nil
         isZoomExifInfoLoaded = false
@@ -1216,7 +1243,7 @@ final class FileBrowserViewModel {
             do {
                 let supportsRAW9 = await RAW9Support.isSupported(for: selectedFile.url)
                 try Task.checkCancellation()
-                if shouldLoadSidecar && supportsRAW9 {
+                if shouldLoadSidecar, supportsRAW9 {
                     await pendingSave?.value
                     do {
                         let saved = try await raw9SidecarStore.load(for: selectedFile.url)
@@ -1241,7 +1268,7 @@ final class FileBrowserViewModel {
                 let developRAW = useDevelopedRAW && !SupportedFileType.isRenderedImage(selectedFile.url)
                 let loadedImage: CGImage? = if developRAW {
                     if supportsRAW9 {
-                        try await raw9Renderer.render(url: selectedFile.url, adjustments: adjustments)
+                        try await raw9Renderer.render(url: selectedFile.url, adjustments: adjustments, bitDepth: settings.rawPreviewBitDepth)
                     } else {
                         try await RawImageLoader.shared.developedPreview(for: selectedFile.url)
                     }
@@ -1271,10 +1298,11 @@ final class FileBrowserViewModel {
         guard zoomOverlayVisible, useDevelopedRAW,
               let url = selectedFile?.url, raw9AdjustmentURL == url else { return }
         let adjustments = raw9Adjustments
+        let bitDepth = settings.rawPreviewBitDepth
         zoomTask?.cancel()
         zoomTask = Task {
             do {
-                let image = try await raw9Renderer.render(url: url, adjustments: adjustments)
+                let image = try await raw9Renderer.render(url: url, adjustments: adjustments, bitDepth: bitDepth)
                 guard !Task.isCancelled, selectedFile?.url == url, useDevelopedRAW else { return }
                 zoomImage = image
                 zoomImageError = nil
@@ -1429,18 +1457,7 @@ final class FileBrowserViewModel {
     }
 
     private func resolvedQwenModelURL() -> URL? {
-        if let bookmarkData = settings.qwenModelBookmarkData {
-            var isStale = false
-            if let url = try? URL(
-                resolvingBookmarkData: bookmarkData,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale,
-            ) {
-                return url.standardizedFileURL
-            }
-        }
-        return settings.qwenModelPath.map { URL(filePath: $0) } ?? managedCLIPModelLocations[.qwen3VL2B]
+        managedCLIPModelLocations[.qwen3VL2B]
     }
 
     private func startQwenModelSecurityScopedAccess(for url: URL) -> Bool {
@@ -1538,20 +1555,7 @@ final class FileBrowserViewModel {
     }
 
     private func activateSelectedCLIPModel(forceValidation: Bool = false) {
-        let selectedURL: URL?
-        if let customURL = resolvedCLIPModelURL() {
-            guard startCLIPModelSecurityScopedAccess(for: customURL) else {
-                deactivateCLIPModelRuntime()
-                clipModelStatus = .invalid(
-                    url: customURL,
-                    reason: "RawCullBrowse could not access the selected CLIP model folder.",
-                )
-                return
-            }
-            selectedURL = customURL
-        } else {
-            selectedURL = managedCLIPModelLocations[settings.selectedCLIPModel.downloadID]
-        }
+        let selectedURL = managedCLIPModelLocations[settings.selectedCLIPModel.downloadID]
 
         guard let modelURL = selectedURL else {
             deactivateCLIPModelRuntime()
@@ -1583,31 +1587,7 @@ final class FileBrowserViewModel {
     }
 
     private func activateSelectedSAM3Model(forceValidation: Bool = false) {
-        let selectedURL: URL?
-        if let customURL = resolvedSAM3ModelURL() {
-            guard startSAM3ModelSecurityScopedAccess(for: customURL) else {
-                let invalidStatus = RawCullBrowseAICapabilityStatus.invalid(
-                    location: customURL,
-                    reason: "RawCullBrowse could not access the selected SAM 3 model folder.",
-                )
-                activeSAM3ModelURL = nil
-                sam3ValidationTask?.cancel()
-                sam3ValidationTask = Task { [weak self] in
-                    guard let self else { return }
-                    _ = await deepAIReviewRuntime.activateSAM3(
-                        at: nil,
-                        controller: deepAIReviewController,
-                    )
-                    guard !Task.isCancelled, activeSAM3ModelURL == nil else { return }
-                    sam3ModelStatus = invalidStatus
-                    sam3ValidationTask = nil
-                }
-                return
-            }
-            selectedURL = customURL
-        } else {
-            selectedURL = managedCLIPModelLocations[.sam3]
-        }
+        let selectedURL = managedCLIPModelLocations[.sam3]
 
         let standardizedURL = selectedURL?.standardizedFileURL
         guard forceValidation || activeSAM3ModelURL != standardizedURL else { return }

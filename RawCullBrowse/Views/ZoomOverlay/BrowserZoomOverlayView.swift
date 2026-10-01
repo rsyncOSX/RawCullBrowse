@@ -177,12 +177,12 @@ struct BrowserZoomOverlayView: View {
                     zoomControlRow
                         .frame(maxWidth: .infinity)
                 }
-                    .scrollIndicators(.hidden)
-                    .frame(height: 66)
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.horizontal, 18)
-                    .padding(.bottom, 18)
+                .scrollIndicators(.hidden)
+                .frame(height: 66)
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.horizontal, 18)
+                .padding(.bottom, 18)
             }
 
             Button("Close") { close() }
@@ -276,10 +276,10 @@ struct BrowserZoomOverlayView: View {
 
     private var rawAdjustmentControls: some View {
         HStack(spacing: 10) {
-            adjustmentSlider("Exposure", value: $viewModel.raw9Adjustments.exposure, range: -3...3)
-            adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1...1)
-            adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1...1)
-            adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1...1)
+            adjustmentSlider("Exposure", value: $viewModel.raw9Adjustments.exposure, range: -3 ... 3)
+            adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1 ... 1)
+            adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
+            adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1 ... 1)
             if let error = viewModel.raw9SidecarError {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
@@ -305,16 +305,18 @@ struct BrowserZoomOverlayView: View {
             Slider(value: value, in: range) { editing in
                 isEditingRAWAdjustment = editing
                 adjustmentRefreshTask?.cancel()
-                if !editing { scheduleRAWAdjustmentRefresh() }
+                if !editing {
+                    scheduleRAWAdjustmentRefresh()
+                }
             }
-                .accessibilityLabel(title)
+            .accessibilityLabel(title)
         }
         .frame(width: 90)
     }
 
     private var zoomControlRow: some View {
         HStack(spacing: 12) {
-            if raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url {
+            if raw9SupportedURL != nil, raw9SupportedURL == viewModel.selectedFile?.url {
                 rawAdjustmentControls
             }
             Picker("", selection: $viewModel.useDevelopedRAW) {

@@ -22,8 +22,8 @@ struct SettingsView: View {
                 AISettingsTab()
             }
 
-            Tab("Manual AI", systemImage: "folder.badge.gearshape") {
-                CLIPSettingsTab()
+            Tab("Images", systemImage: "photo") {
+                ImagePreviewSettingsTab()
             }
 
             Tab("CLIP Indexes", systemImage: "square.stack.3d.up") {

@@ -39,7 +39,7 @@ actor RAW9PreviewRenderer {
     private lazy var context = CIContext(options: [.cacheIntermediates: true])
     private var defaults: (noise: Float, sharpness: Float, contrast: Float) = (0, 0, 0)
 
-    func render(url: URL, adjustments: RAW9Adjustments) throws -> CGImage {
+    func render(url: URL, adjustments: RAW9Adjustments, bitDepth: RAWPreviewBitDepth = .eightBit) throws -> CGImage {
         try Task.checkCancellation()
         if sourceURL != url {
             filter = nil
@@ -59,9 +59,9 @@ actor RAW9PreviewRenderer {
         filter.contrastAmount = min(1, max(0, defaults.contrast + Float(adjustments.contrast)))
         guard let output = filter.outputImage,
               let image = context.createCGImage(
-                output, from: output.extent, format: .RGBA8,
-                colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
-            )
+                  output, from: output.extent, format: bitDepth == .eightBit ? .RGBA8 : .RGBAh,
+                  colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+              )
         else { throw CocoaError(.fileReadUnknown) }
         try Task.checkCancellation()
         return image
@@ -103,9 +103,9 @@ actor RAW9SidecarStore {
     }
 
     private nonisolated static func isValid(_ value: RAW9Adjustments) -> Bool {
-        value.exposure.isFinite && (-3...3).contains(value.exposure)
-            && value.noiseReduction.isFinite && (-1...1).contains(value.noiseReduction)
-            && value.sharpness.isFinite && (-1...1).contains(value.sharpness)
-            && value.contrast.isFinite && (-1...1).contains(value.contrast)
+        value.exposure.isFinite && (-3 ... 3).contains(value.exposure)
+            && value.noiseReduction.isFinite && (-1 ... 1).contains(value.noiseReduction)
+            && value.sharpness.isFinite && (-1 ... 1).contains(value.sharpness)
+            && value.contrast.isFinite && (-1 ... 1).contains(value.contrast)
     }
 }
