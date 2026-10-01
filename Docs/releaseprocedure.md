@@ -181,37 +181,37 @@ Apple documents `altool` asset upload with an archive path, the app's numeric Ap
 
 1. Confirm the active Xcode installation using `xcode-select -p` and `xcodebuild -version`.
 2. Run `xcrun altool --help` and confirm it works before starting a multi-gigabyte upload. During preparation of this runbook, the local invocation failed because `Defaults.properties` was missing; the command-line upload route needs that tooling issue resolved first. Transporter is the alternative below.
-3. Authenticate using an app-specific password stored in Keychain. Use the credential-storage syntax supported by your installed `altool`; the examples below assume the Keychain item is named `RawCullBrowseASC`. Keep the password out of this document and shell history.
-4. The commands below use **RawCullBrowse's numeric Apple ID `6818066038`**. Replace the email placeholder with your sign-in email.
+3. Authenticate using the App Store Connect API private key at `/Users/thomas/AuthKey_94B3QRRAMZ.p8` (key ID `94B3QRRAMZ`). Each command sets `API_PRIVATE_KEYS_DIR=/Users/thomas` so `altool` can find that file. Keep the private key outside the repository.
+4. The commands below use **RawCullBrowse's numeric Apple ID `6818066038`** and App Store Connect issuer ID `69a6de6f-0535-47e3-e053-5b8c7c11a4d1`.
 5. Upload CLIP first:
 
 ```sh
-xcrun altool \
+API_PRIVATE_KEYS_DIR=/Users/thomas xcrun altool \
   --upload-asset-pack /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/clip-datacomp.aar \
   --apple-id '6818066038' \
-  -u '<APP_STORE_CONNECT_EMAIL>' \
-  -p '@keychain:RawCullBrowseASC'
+  --api-key '94B3QRRAMZ' \
+  --api-issuer '69a6de6f-0535-47e3-e053-5b8c7c11a4d1'
 ```
 
 6. Wait for successful processing and verify the destination app and pack identifier in section 6.
 7. Upload SAM 3:
 
 ```sh
-xcrun altool \
+API_PRIVATE_KEYS_DIR=/Users/thomas xcrun altool \
   --upload-asset-pack /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/sam3.aar \
   --apple-id '6818066038' \
-  -u '<APP_STORE_CONNECT_EMAIL>' \
-  -p '@keychain:RawCullBrowseASC'
+  --api-key '94B3QRRAMZ' \
+  --api-issuer '69a6de6f-0535-47e3-e053-5b8c7c11a4d1'
 ```
 
 8. Upload Qwen:
 
 ```sh
-xcrun altool \
+API_PRIVATE_KEYS_DIR=/Users/thomas xcrun altool \
   --upload-asset-pack /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/qwen3-vl-2b.aar \
   --apple-id '6818066038' \
-  -u '<APP_STORE_CONNECT_EMAIL>' \
-  -p '@keychain:RawCullBrowseASC'
+  --api-key '94B3QRRAMZ' \
+  --api-issuer '69a6de6f-0535-47e3-e053-5b8c7c11a4d1'
 ```
 
 9. Save delivery logs and upload dates. A completed transfer is not the same as completed Apple processing.
