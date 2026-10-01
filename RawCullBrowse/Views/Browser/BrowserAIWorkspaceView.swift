@@ -77,7 +77,7 @@ struct BrowserAIWorkspaceView: View {
                     Text("Ask about composition, exposure, expression, or visible subjects. Results stay here while you continue browsing.")
                         .foregroundStyle(.secondary)
                     TextField("Review instructions", text: $viewModel.qwenPrompt, axis: .vertical)
-                        .lineLimit(2...4)
+                        .lineLimit(2 ... 4)
                         .textFieldStyle(.roundedBorder)
                         .disabled(viewModel.isQwenResponding)
                     HStack {
@@ -104,8 +104,8 @@ struct BrowserAIWorkspaceView: View {
                                 submittedPrompt = viewModel.qwenPrompt
                                 viewModel.askQwen()
                             }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(!viewModel.canAskQwen)
+                            .buttonStyle(.borderedProminent)
+                            .disabled(!viewModel.canAskQwen)
                         }
                     }
                     if !viewModel.qwenModelStatus.isAvailable {
@@ -120,13 +120,13 @@ struct BrowserAIWorkspaceView: View {
             }
             if viewModel.qwenResults.isEmpty {
                 ContentUnavailableView("Ready to Review", systemImage: "photo.badge.checkmark",
-                    description: Text(viewModel.selectedFiles.isEmpty
-                        ? "Select photos in the browser, then return here to review composition, exposure, and subjects."
-                        : "Adjust the instructions above, then review the selected photos."))
+                                       description: Text(viewModel.selectedFiles.isEmpty
+                                           ? "Select photos in the browser, then return here to review composition, exposure, and subjects."
+                                           : "Adjust the instructions above, then review the selected photos."))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 QwenResponseSheetView(prompt: submittedPrompt, results: viewModel.qwenResults,
-                    onClose: { viewModel.qwenResults = [] }, isEmbedded: true)
+                                      onClose: { viewModel.qwenResults = [] }, isEmbedded: true)
             }
         }
     }
@@ -150,21 +150,21 @@ struct BrowserAIWorkspaceView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                 DeepAIReviewSheetView(controller: viewModel.deepAIReviewController,
-                    groupID: signature.hashValue, groupSignature: signature, files: reviewFiles,
-                    onRun: {
-                        await viewModel.startDeepReview(groupID: signature.hashValue,
-                            groupSignature: signature, files: reviewFiles)
-                    }, onApply: { result in
-                        if let winner = reviewFiles.first(where: { $0.id == result.recommendedFileID }) {
-                            viewModel.selectOnlyFile(winner)
-                            openWindow(id: "main-window")
-                        }
-                    }, onClose: { reviewSignature = nil }, isEmbedded: true)
+                                      groupID: signature.hashValue, groupSignature: signature, files: reviewFiles,
+                                      onRun: {
+                                          await viewModel.startDeepReview(groupID: signature.hashValue,
+                                                                          groupSignature: signature, files: reviewFiles)
+                                      }, onApply: { result in
+                                          if let winner = reviewFiles.first(where: { $0.id == result.recommendedFileID }) {
+                                              viewModel.selectOnlyFile(winner)
+                                              openWindow(id: "main-window")
+                                          }
+                                      }, onClose: { reviewSignature = nil }, isEmbedded: true)
             } else {
                 ContentUnavailableView("Ready for Subject Review", systemImage: "viewfinder",
-                    description: Text(viewModel.sam3ModelStatus.isAvailable
-                        ? "Select photos in the browser to compare subject detail and inspect subject outlines."
-                        : "Subject detail review requires a configured SAM 3 model. Manage models in Settings."))
+                                       description: Text(viewModel.sam3ModelStatus.isAvailable
+                                           ? "Select photos in the browser to compare subject detail and inspect subject outlines."
+                                           : "Subject detail review requires a configured SAM 3 model. Manage models in Settings."))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -174,7 +174,7 @@ struct BrowserAIWorkspaceView: View {
         Form {
             Section("Find images by description") {
                 TextField("Image description", text: $viewModel.semanticSearchQuery,
-                    prompt: Text("For example: a bird flying over water"))
+                          prompt: Text("For example: a bird flying over water"))
                     .labelsHidden()
                     .textFieldStyle(.roundedBorder)
                     .frame(maxWidth: .infinity)
@@ -195,11 +195,13 @@ struct BrowserAIWorkspaceView: View {
                 .disabled(!viewModel.canFindSimilar)
             }
             Section {
-                if !viewModel.canSearch && !viewModel.isSearching {
+                if !viewModel.canSearch, !viewModel.isSearching {
                     Text("Search uses the top-level catalog’s index. Manage the CLIP model and catalog index in Settings.")
                         .foregroundStyle(.secondary)
                 }
-                if viewModel.isSearching { ProgressView("Searching…") }
+                if viewModel.isSearching {
+                    ProgressView("Searching…")
+                }
                 if let error = viewModel.clipFeatureError {
                     Text(error).foregroundStyle(.orange)
                 }

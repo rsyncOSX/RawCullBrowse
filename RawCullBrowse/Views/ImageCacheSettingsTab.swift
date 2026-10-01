@@ -47,14 +47,18 @@ struct ImageCacheSettingsTab: View {
                     }
                 }
                 .disabled(isClearing)
-                if isClearing { ProgressView("Clearing image cache…") }
-                if let status { Text(status) }
+                if isClearing {
+                    ProgressView("Clearing image cache…")
+                }
+                if let status {
+                    Text(status)
+                }
             }
         }
         .formStyle(.grouped)
         .task {
-            thumbnailPath =  ThumbnailDiskCache.shared.cacheDirectory.path
-            fullSizePath =  FullSizeJPGDiskCache.shared.cacheDirectory.path
+            thumbnailPath = ThumbnailDiskCache.shared.cacheDirectory.path
+            fullSizePath = FullSizeJPGDiskCache.shared.cacheDirectory.path
             await refreshCacheSize()
         }
     }

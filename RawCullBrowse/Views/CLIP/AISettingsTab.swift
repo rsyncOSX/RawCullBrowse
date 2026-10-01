@@ -30,10 +30,9 @@ struct AISettingsTab: View {
                 Downloaded models are used automatically. A folder selected in Manual AI overrides \
                 the downloaded model until the selection is cleared.
                 """)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
-
         }
         .formStyle(.grouped)
         .sheet(isPresented: $showModelDownloads) {

@@ -38,7 +38,6 @@ struct FileBrowserView: View {
         } message: {
             Text(viewModel.qwenFeatureError ?? "The Qwen request could not be completed.")
         }
-
     }
 
     @ToolbarContentBuilder
@@ -89,5 +88,4 @@ struct FileBrowserView: View {
             }
         }
     }
-
 }

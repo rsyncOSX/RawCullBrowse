@@ -217,12 +217,24 @@ actor RawImageLoader {
         let tasks = Array(thumbnailTasks.values)
         let previews = Array(extractedJPGTasks.values)
         let developments = Array(developedTasks.values)
-        for task in tasks { task.cancel() }
-        for task in previews { task.cancel() }
-        for task in developments { task.cancel() }
-        for task in tasks { _ = await task.value }
-        for task in previews { _ = await task.value }
-        for task in developments { _ = await task.result }
+        for task in tasks {
+            task.cancel()
+        }
+        for task in previews {
+            task.cancel()
+        }
+        for task in developments {
+            task.cancel()
+        }
+        for task in tasks {
+            _ = await task.value
+        }
+        for task in previews {
+            _ = await task.value
+        }
+        for task in developments {
+            _ = await task.result
+        }
         await MemoryImageCache.shared.clear()
         try await ThumbnailDiskCache.shared.clear()
         try await Self.fullSizeCache.clear()

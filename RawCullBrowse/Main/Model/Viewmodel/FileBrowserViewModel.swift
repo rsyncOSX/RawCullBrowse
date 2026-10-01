@@ -308,7 +308,9 @@ final class FileBrowserViewModel {
             guard let self else { return }
             var completed: [QwenPhotoAnalysisResult] = []
             for (index, file) in files.enumerated() {
-                if Task.isCancelled || qwenRequestID != requestID { break }
+                if Task.isCancelled || qwenRequestID != requestID {
+                    break
+                }
                 qwenProgress = QwenBatchProgress(
                     completedCount: completed.count,
                     totalCount: files.count,
@@ -379,7 +381,7 @@ final class FileBrowserViewModel {
         let preparationFiles = deepAIReviewController.scope == .fast
             ? Array(files.prefix(8))
             : files
-        let labels = (try? await clipEngine?.classifySubjects(
+        let labels = await (try? clipEngine?.classifySubjects(
             in: preparationFiles.map(\.url),
         )) ?? [:]
         var candidates: [DeepAIReviewInputCandidate] = []
@@ -430,7 +432,7 @@ final class FileBrowserViewModel {
         do {
             try await clipModelDownloadCoordinator.acceptLicence(
                 for: id,
-                rawCullBrowseVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+                rawCullBrowseVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
             )
             await refreshCLIPModels()
         } catch {
@@ -1165,17 +1167,18 @@ final class FileBrowserViewModel {
         zoomTask = Task {
             async let exifInfo = RawImageLoader.shared.metadata(for: selectedFile.url)
             do {
-                let loadedImage: CGImage?
-                if developRAW {
-                    loadedImage = try await RawImageLoader.shared.developedPreview(for: selectedFile.url)
+                let loadedImage: CGImage? = if developRAW {
+                    try await RawImageLoader.shared.developedPreview(for: selectedFile.url)
                 } else {
-                    loadedImage = await RawImageLoader.shared.previewImage(
+                    await RawImageLoader.shared.previewImage(
                         for: selectedFile.url, maxPixelSize: previewSize,
                     )
                 }
                 guard !Task.isCancelled else { return }
                 zoomImage = loadedImage
-                if loadedImage == nil { zoomImageError = "Unable to load this image." }
+                if loadedImage == nil {
+                    zoomImageError = "Unable to load this image."
+                }
             } catch {
                 guard !Task.isCancelled else { return }
                 zoomImageError = "RAW development failed: \(error.localizedDescription)"

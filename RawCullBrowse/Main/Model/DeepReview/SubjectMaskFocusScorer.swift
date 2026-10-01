@@ -49,7 +49,7 @@ nonisolated struct SubjectMaskFocusScorer: SubjectMaskFocusScoring, Sendable {
             luminance[index] = (
                 Float(imagePixels[offset]) * 0.2126
                     + Float(imagePixels[offset + 1]) * 0.7152
-                    + Float(imagePixels[offset + 2]) * 0.0722
+                    + Float(imagePixels[offset + 2]) * 0.0722,
             ) / 255
         }
         try Task.checkCancellation()
@@ -86,7 +86,7 @@ nonisolated struct SubjectMaskFocusScorer: SubjectMaskFocusScoring, Sendable {
                         - luminance[index - 1]
                         - luminance[index + 1]
                         - luminance[index - width]
-                        - luminance[index + width]
+                        - luminance[index + width],
                 )
                 guard edgeEnergy.isFinite else { continue }
                 globalSamples.append(edgeEnergy)
@@ -198,7 +198,9 @@ nonisolated struct SubjectMaskFocusScorer: SubjectMaskFocusScoring, Sendable {
         let p20 = sorted[min(max(Int(Float(n - 1) * 0.20), 0), n - 1)]
         let p90 = sorted[min(max(Int(Float(n - 1) * 0.90), 0), n - 1)]
         let p97 = sorted[min(max(Int(Float(n - 1) * 0.97), 0), n - 1)]
-        if p97 <= p90 { return max(0, p90 - p20) }
+        if p97 <= p90 {
+            return max(0, p90 - p20)
+        }
 
         var sum: Float = 0
         var count = 0

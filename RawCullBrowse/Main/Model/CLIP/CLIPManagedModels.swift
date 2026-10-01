@@ -1,7 +1,7 @@
 import BackgroundAssets
 import Foundation
-import System
 import Security
+import System
 
 nonisolated enum CLIPManagedModel: String, CaseIterable, Codable, Hashable, Identifiable, Sendable {
     case dataComp = "data-comp"
@@ -16,18 +16,17 @@ nonisolated enum CLIPManagedModel: String, CaseIterable, Codable, Hashable, Iden
     var displayName: String {
         switch self {
         case .dataComp: "DataComp"
-        // case .openAI: "OpenAI"
+            // case .openAI: "OpenAI"
         }
     }
 
     var downloadID: CLIPModelDownloadID {
         switch self {
         case .dataComp: .clipDataComp
-        // case .openAI: .clipOpenAI
+            // case .openAI: .clipOpenAI
         }
     }
 }
-
 
 nonisolated enum RawCullBrowseAIModelDownloadSource: Equatable, Sendable {
     case appleHosted
@@ -308,7 +307,7 @@ actor CLIPModelDownloadCoordinator {
         catalog: CLIPModelDownloadCatalog = .production,
         service: any CLIPModelDownloadServicing = ManagedBackgroundAssetsCLIPModelDownloadService(),
         acceptanceStore: any RawCullBrowseAIModelLicenceAcceptanceStoring = RawCullBrowseAIModelLicenceAcceptanceFileStore(
-            fileURL: URL.applicationSupportDirectory.appending(path: "RawCullBrowse/model-licence-acceptances.json")
+            fileURL: URL.applicationSupportDirectory.appending(path: "RawCullBrowse/model-licence-acceptances.json"),
         ),
     ) {
         self.catalog = catalog

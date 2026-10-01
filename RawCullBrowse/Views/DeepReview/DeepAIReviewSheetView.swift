@@ -202,8 +202,10 @@ private struct DeepAIReviewSheetContent: View {
         switch failure {
         case let .modelUnavailable(reason):
             reason
+
         case .noCandidates:
             "There are no selected images to review."
+
         case let .pipelineFailed(reason):
             "The in-process segmentation pipeline failed: \(reason)"
         }

@@ -325,7 +325,7 @@ final nonisolated class CLIPSearchEngine: Sendable {
             ("deer", "a photo of a deer"),
             ("animal", "a photo of an animal"),
             ("car", "a photo of a car"),
-            ("landscape", "a landscape photo"),
+            ("landscape", "a landscape photo")
         ]
         var bestByPath: [String: (label: String, score: Float)] = [:]
         for prompt in prompts {

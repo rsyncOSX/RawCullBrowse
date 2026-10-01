@@ -39,6 +39,6 @@ nonisolated enum WholeImageSharpnessScorer {
         guard count > 0 else { return nil }
         let mean = sum / count
         let variance = max(0, (squaredSum / count) - (mean * mean))
-        return variance / (variance + 1_000)
+        return variance / (variance + 1000)
     }
 }

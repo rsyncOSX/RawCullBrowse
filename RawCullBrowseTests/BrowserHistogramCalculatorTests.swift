@@ -6,7 +6,7 @@ import Testing
 struct BrowserHistogramCalculatorTests {
     @Test
     func `Bounds the sampled image while preserving its aspect ratio`() throws {
-        let image = try makeSplitImage(width: 1_024, height: 512)
+        let image = try makeSplitImage(width: 1024, height: 512)
 
         let sampledImage = BrowserHistogramCalculator.sampledImage(from: image)
 
@@ -16,7 +16,7 @@ struct BrowserHistogramCalculatorTests {
 
     @Test
     func `Sampled histogram preserves dominant luminance values`() async throws {
-        let image = try makeSplitImage(width: 1_024, height: 512)
+        let image = try makeSplitImage(width: 1024, height: 512)
 
         let histogram = await BrowserHistogramCalculator.normalizedLuminanceHistogram(from: image)
 

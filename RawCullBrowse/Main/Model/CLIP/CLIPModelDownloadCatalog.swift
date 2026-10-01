@@ -11,7 +11,6 @@ nonisolated enum CLIPModelDownloadID: String, CaseIterable, Codable, Identifiabl
     var id: String {
         rawValue
     }
-
 }
 
 nonisolated struct RawCullBrowseAIModelLicenceDescriptor: Equatable, Sendable {
@@ -57,7 +56,7 @@ nonisolated enum RawCullBrowseAIModelReleaseReadiness: Equatable, Sendable {
 /// Distribution metadata owned by RawCullBrowse rather than by the download host.
 ///
 /// Keeping licence and provenance metadata in the application means the same
-/// review flow works for both self-hosted and Apple-hosted asset packs.
+/// review flow works for Apple-hosted asset packs.
 nonisolated struct CLIPModelDownloadDescriptor: Equatable, Identifiable, Sendable {
     let id: CLIPModelDownloadID
     let displayName: String
@@ -212,7 +211,15 @@ nonisolated struct CLIPModelDownloadCatalog: Equatable, Sendable {
 }
 
 extension CLIPModelDownloadDescriptor {
-    var licenceName: String { licence.name }
-    var licenceSummary: LocalizedStringResource { licence.summary }
-    var licenceURL: URL { licence.completeTextURL }
+    var licenceName: String {
+        licence.name
+    }
+
+    var licenceSummary: LocalizedStringResource {
+        licence.summary
+    }
+
+    var licenceURL: URL {
+        licence.completeTextURL
+    }
 }

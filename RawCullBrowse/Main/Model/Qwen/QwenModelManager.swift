@@ -1,5 +1,5 @@
-import CoreAIQwenBackend
 import CoreAILanguageModels
+import CoreAIQwenBackend
 import CoreGraphics
 import Foundation
 import FoundationModels
@@ -76,7 +76,7 @@ actor QwenModelManager {
 
         let session = LanguageModelSession(model: model)
         let response = try await session.respond(
-            options: GenerationOptions(maximumResponseTokens: 512)
+            options: GenerationOptions(maximumResponseTokens: 512),
         ) {
             Attachment(image)
             prompt
@@ -86,25 +86,25 @@ actor QwenModelManager {
 
     func assess(criteria: String, image: CGImage) async throws -> QwenPhotoAssessment {
         let prompt = """
-            Analyze this photograph using these additional criteria:
-            \(criteria)
+        Analyze this photograph using these additional criteria:
+        \(criteria)
 
-            Return exactly one JSON object and no Markdown. Use this schema:
-            {
-              "subject": "short description",
-              "compositionScore": 1,
-              "exposureScore": 1,
-              "subjectVisibilityScore": 1,
-              "eyesOpen": null,
-              "problems": ["short issue"],
-              "strengths": ["short strength"],
-              "confidence": 0.0
-            }
-            All three scores must be integers from 1 through 5. Confidence must be from 0 through 1.
-            Use null for eyesOpen when the photograph has no clearly visible eyes.
-            """
-        return try QwenPhotoAssessment.decodeResponse(
-            try await respond(to: prompt, image: image),
+        Return exactly one JSON object and no Markdown. Use this schema:
+        {
+          "subject": "short description",
+          "compositionScore": 1,
+          "exposureScore": 1,
+          "subjectVisibilityScore": 1,
+          "eyesOpen": null,
+          "problems": ["short issue"],
+          "strengths": ["short strength"],
+          "confidence": 0.0
+        }
+        All three scores must be integers from 1 through 5. Confidence must be from 0 through 1.
+        Use null for eyesOpen when the photograph has no clearly visible eyes.
+        """
+        return try await QwenPhotoAssessment.decodeResponse(
+            respond(to: prompt, image: image),
         )
     }
 
@@ -130,12 +130,16 @@ nonisolated enum QwenModelError: Error, LocalizedError, Sendable {
         switch self {
         case .modelUnavailable:
             "Select and validate a Qwen model in AI Settings first."
+
         case .visionModelRequired:
             "The selected model is text-only. Select a Qwen vision-language bundle, such as Qwen3-VL-2B-Instruct."
+
         case .imageUnavailable:
             "The selected photo could not be decoded for Qwen."
+
         case .emptyResponse:
             "Qwen returned an empty response."
+
         case .invalidStructuredResponse:
             "Qwen did not return a valid structured photo assessment."
         }

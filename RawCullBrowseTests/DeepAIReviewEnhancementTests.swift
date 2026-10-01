@@ -6,14 +6,13 @@ import Testing
 @Suite("Deep Review enhancements")
 struct DeepAIReviewEnhancementTests {
     @Test(
-        "Scope selects the expected candidates",
         arguments: [
             (DeepAIReviewScope.fast, Array(1 ... 8)),
             (DeepAIReviewScope.automatic, Array(4 ... 15)),
-            (DeepAIReviewScope.full, Array(1 ... 15)),
+            (DeepAIReviewScope.full, Array(1 ... 15))
         ],
     )
-    func scopeSelection(scope: DeepAIReviewScope, expectedRanks: [Int]) {
+    func `Scope selects the expected candidates`(scope: DeepAIReviewScope, expectedRanks: [Int]) {
         let candidates = (1 ... 15).map { makeCandidate(rank: $0) }
 
         let selected = RawCullBrowseDeepAIReviewPipeline.selectedCandidates(
@@ -25,15 +24,14 @@ struct DeepAIReviewEnhancementTests {
     }
 
     @Test(
-        "Subject labels choose a specific SAM prompt",
         arguments: [
             ("person", SubjectSegmentationPrompt.face),
             ("bird", SubjectSegmentationPrompt.birdHead),
             ("deer", SubjectSegmentationPrompt.animalHead),
-            ("car", SubjectSegmentationPrompt.subject),
+            ("car", SubjectSegmentationPrompt.subject)
         ],
     )
-    func subjectPrompt(label: String, expectedPrompt: SubjectSegmentationPrompt) {
+    func `Subject labels choose a specific SAM prompt`(label: String, expectedPrompt: SubjectSegmentationPrompt) {
         let prompts = RawCullBrowseDeepAIReviewPipeline.promptAttempts(
             preset: .auto,
             subjectLabel: label,

@@ -171,5 +171,4 @@ struct BrowserGridView: View {
         let thumbnailCount = Int((availableWidth + gridSpacing) / (thumbnailMinimumWidth + gridSpacing))
         horizontalThumbnailCount = max(1, thumbnailCount)
     }
-
 }

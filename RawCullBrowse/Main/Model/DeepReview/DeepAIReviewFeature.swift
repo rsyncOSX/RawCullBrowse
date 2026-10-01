@@ -21,7 +21,9 @@ nonisolated enum DeepAIReviewScope: String, CaseIterable, Codable, Identifiable,
     case fast
     case full
 
-    var id: String { rawValue }
+    var id: String {
+        rawValue
+    }
 }
 
 nonisolated enum DeepAIReviewConfidence: String, Codable, Sendable {
@@ -139,12 +141,16 @@ nonisolated enum DeepAIReviewState: Equatable, Sendable {
         switch self {
         case .idle:
             nil
+
         case let .preparing(groupID, _), let .completing(groupID), let .cancelled(groupID):
             groupID
+
         case let .running(progress):
             progress.groupID
+
         case let .failed(groupID, _):
             groupID
+
         case let .completed(result):
             result.groupID
         }
@@ -154,6 +160,7 @@ nonisolated enum DeepAIReviewState: Equatable, Sendable {
         switch self {
         case .preparing, .running, .completing:
             true
+
         case .idle, .cancelled, .failed, .completed:
             false
         }
@@ -373,16 +380,20 @@ final class DeepAIReviewFeature {
         switch status {
         case .checking:
             "RawCullBrowse is still checking the selected segmentation model."
+
         case .available:
             "The selected in-process segmentation pipeline is unavailable."
+
         case let .missing(expectedLocations):
             expectedLocations.first.map {
                 "Install the selected segmentation model at \($0.path)."
             } ?? "Install the selected segmentation model."
+
         case let .invalid(location, reason):
             location.map {
                 "The selected segmentation model at \($0.path) is invalid: \(reason)"
             } ?? "The selected segmentation model is invalid: \(reason)"
+
         case let .unavailable(reason):
             reason
         }
@@ -409,11 +420,12 @@ nonisolated struct RawCullBrowseDeepReviewImageDecoder: DeepAIReviewImageDecodin
             for: candidate.url,
             targetSize: maximumPixelSize,
         ),
-        let cgImage = image.cgImage(
-            forProposedRect: nil,
-            context: nil,
-            hints: nil,
-        ) else {
+            let cgImage = image.cgImage(
+                forProposedRect: nil,
+                context: nil,
+                hints: nil,
+            )
+        else {
             throw DeepAIReviewCandidateIssue.imageDecodeFailed
         }
         try Task.checkCancellation()
@@ -494,8 +506,10 @@ nonisolated struct RawCullBrowseDeepAIReviewPipeline: DeepAIReviewServicing, Sen
         switch preset {
         case .fullSubject:
             [.subject]
+
         case .headFace:
             specificPromptAttempts(subjectLabel: subjectLabel)
+
         case .auto:
             automaticPromptAttempts(subjectLabel: subjectLabel)
         }
@@ -661,15 +675,19 @@ nonisolated struct RawCullBrowseDeepAIReviewPipeline: DeepAIReviewServicing, Sen
         switch scope {
         case .fast:
             return Array(selectionOrdered.prefix(8))
+
         case .full:
             return selectionOrdered
+
         case .automatic:
             guard selectionOrdered.count > 12 else { return selectionOrdered }
             return selectionOrdered
                 .sorted {
                     let lhs = $0.normalSharpnessScore ?? -.infinity
                     let rhs = $1.normalSharpnessScore ?? -.infinity
-                    if lhs == rhs { return $0.burstRank < $1.burstRank }
+                    if lhs == rhs {
+                        return $0.burstRank < $1.burstRank
+                    }
                     return lhs > rhs
                 }
                 .prefix(12)
@@ -719,8 +737,10 @@ nonisolated struct RawCullBrowseDeepAIReviewPipeline: DeepAIReviewServicing, Sen
         return switch preset {
         case .fullSubject:
             selectedPrompt == .subject
+
         case .headFace:
             !usedFallback && [.birdHead, .animalHead, .face].contains(selectedPrompt)
+
         case .auto:
             !usedFallback
         }

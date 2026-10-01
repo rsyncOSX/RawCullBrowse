@@ -77,15 +77,20 @@ final class DeepAIReviewController {
         switch feature.state {
         case let .preparing(activeGroupID, totalCount) where activeGroupID == groupID:
             .preparing(groupID: activeGroupID, totalCount: totalCount)
+
         case let .running(progress) where progress.groupID == groupID:
             .running(progress)
+
         case let .completing(activeGroupID) where activeGroupID == groupID:
             .completing(groupID: activeGroupID)
+
         case let .cancelled(activeGroupID) where activeGroupID == groupID:
             .cancelled(groupID: activeGroupID)
+
         case let .failed(activeGroupID, failure)
             where activeGroupID == nil || activeGroupID == groupID:
             .failed(groupID: activeGroupID, failure: failure)
+
         case .idle, .preparing, .running, .completing, .cancelled, .failed, .completed:
             nil
         }
@@ -95,18 +100,22 @@ final class DeepAIReviewController {
         switch feature.availability {
         case let .checking(expectedLocations):
             return .checking(expectedLocations: expectedLocations)
+
         case .available:
             return .ready
+
         case let .missing(expectedLocations):
             let reason = expectedLocations.first.map {
                 "Install the selected segmentation model at \($0.path)."
             } ?? "Install the selected segmentation model."
             return .unavailable(reason: reason)
+
         case let .invalid(location, reason):
             let message = location.map {
                 "The selected segmentation model at \($0.path) is invalid: \(reason)"
             } ?? "The selected segmentation model is invalid: \(reason)"
             return .unavailable(reason: message)
+
         case let .unavailable(reason):
             return .unavailable(reason: reason)
         }

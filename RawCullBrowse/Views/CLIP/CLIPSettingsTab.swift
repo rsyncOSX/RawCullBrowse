@@ -20,8 +20,8 @@ struct CLIPSettingsTab: View {
                 Select a local CLIP or SigLIP Core AI bundle for semantic indexing and search, or use \
                 the downloadable DataComp CLIP model.
                 """)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
             Section("SAM 3") {
@@ -75,8 +75,8 @@ struct CLIPSettingsTab: View {
                 Select a local Qwen vision-language Core AI bundle, such as Qwen3-VL-2B-Instruct. \
                 The selected folder overrides the Apple-hosted Qwen model until cleared.
                 """)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

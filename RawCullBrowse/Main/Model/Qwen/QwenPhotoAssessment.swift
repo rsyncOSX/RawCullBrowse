@@ -51,7 +51,9 @@ nonisolated struct QwenPhotoAnalysisResult: Equatable, Identifiable, Sendable {
     let assessment: QwenPhotoAssessment?
     let failure: String?
 
-    var id: UUID { fileID }
+    var id: UUID {
+        fileID
+    }
 }
 
 nonisolated struct QwenBatchProgress: Equatable, Sendable {

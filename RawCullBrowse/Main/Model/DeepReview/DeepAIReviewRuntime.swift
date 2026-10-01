@@ -163,9 +163,9 @@ final class DeepAIReviewRuntime {
             for: .applicationSupportDirectory,
             in: .userDomainMask,
         )[0]
-        .appendingPathComponent("RawCullBrowse", isDirectory: true)
-        .appendingPathComponent("Models", isDirectory: true)
-        .appendingPathComponent("SAM3", isDirectory: true)
+            .appendingPathComponent("RawCullBrowse", isDirectory: true)
+            .appendingPathComponent("Models", isDirectory: true)
+            .appendingPathComponent("SAM3", isDirectory: true)
     }
 
     private static func defaultMaskDirectory() -> URL {
@@ -173,12 +173,12 @@ final class DeepAIReviewRuntime {
             for: .cachesDirectory,
             in: .userDomainMask,
         )[0]
-        .appendingPathComponent("RawCullBrowse", isDirectory: true)
-        // Earlier builds decoded the full RAW preview despite requesting a
-        // bounded analysis image, so their cached masks can be tens of
-        // megapixels. Use a new cache generation rather than loading those
-        // oversized artifacts into the subject-outline UI.
-        .appendingPathComponent("SubjectMasks-v2", isDirectory: true)
+            .appendingPathComponent("RawCullBrowse", isDirectory: true)
+            // Earlier builds decoded the full RAW preview despite requesting a
+            // bounded analysis image, so their cached masks can be tens of
+            // megapixels. Use a new cache generation rather than loading those
+            // oversized artifacts into the subject-outline UI.
+            .appendingPathComponent("SubjectMasks-v2", isDirectory: true)
     }
 }
 

@@ -11,7 +11,9 @@ actor MemoryImageCache {
         thumbnailCache.countLimit = 3000
     }
 
-    func clear() { thumbnailCache.removeAllObjects() }
+    func clear() {
+        thumbnailCache.removeAllObjects()
+    }
 
     func apply(settings: BrowserSettings) {
         thumbnailCache.totalCostLimit = max(0, settings.gridCacheSizeMB) * 1024 * 1024

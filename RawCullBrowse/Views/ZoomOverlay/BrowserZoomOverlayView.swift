@@ -1,5 +1,5 @@
-import SwiftUI
 import RawParserKit
+import SwiftUI
 
 struct BrowserZoomOverlayView: View {
     @Bindable var viewModel: FileBrowserViewModel

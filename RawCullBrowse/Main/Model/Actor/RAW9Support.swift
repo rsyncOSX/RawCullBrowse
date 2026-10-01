@@ -5,8 +5,12 @@ import RawParserKit
 /// Checks the installed decoder's capabilities without rendering sensor data.
 nonisolated enum RAW9Support {
     static func preferredVersion(in versions: [CIRAWDecoderVersion]) -> CIRAWDecoderVersion? {
-        if versions.contains(.version9) { return .version9 }
-        if versions.contains(.version9DNG) { return .version9DNG }
+        if versions.contains(.version9) {
+            return .version9
+        }
+        if versions.contains(.version9DNG) {
+            return .version9DNG
+        }
         return nil
     }
 
