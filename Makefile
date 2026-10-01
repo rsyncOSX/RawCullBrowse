@@ -27,18 +27,15 @@ test-full:
 
 # --- MAIN WORKFLOW FUNCTIONS --- #
 archive: clean
-	osascript -e 'display notification "Exporting application archive..." with title "Build RawCullBrowse"'
-	echo "Exporting application archive (RELEASE)..."
+	osascript -e 'display notification "Building local Release app..." with title "Build RawCullBrowse"'
+	echo "Building application archive (RELEASE)..."
 	xcodebuild \
 		$(XCODE_RELEASE_FLAGS) archive \
 		-archivePath $(BUILD_PATH)/$(APP).xcarchive
-	echo "Application built, starting the export archive..."
-	xcodebuild -exportArchive \
-		-exportOptionsPlist "exportOptions.plist" \
-		-archivePath $(BUILD_PATH)/$(APP).xcarchive \
-		-exportPath $(BUILD_PATH) \
-		-allowProvisioningUpdates
-	echo "Project archived successfully (RELEASE)"
+	echo "Copying the signed archive app for local testing..."
+	ditto "$(BUILD_PATH)/$(APP).xcarchive/Products/Applications/$(APP).app" $(APP_PATH)
+	codesign --verify --deep --strict $(APP_PATH)
+	echo "Release app ready for local testing at: $(APP_PATH)"
 
 archive-debug: clean
 	osascript -e 'display notification "Building debug version..." with title "Build RawCullBrowse"'

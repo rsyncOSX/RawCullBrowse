@@ -105,6 +105,15 @@ Build from the command line:
 xcodebuild -project RawCullBrowse.xcodeproj -scheme RawCullBrowse -destination 'platform=macOS' build
 ```
 
+Create a Release archive and a signed app for local testing:
+
+```sh
+make archive
+open build/RawCullBrowse.app
+```
+
+The archive is written to `build/RawCullBrowse.xcarchive`. Its development-signed app is copied to `build/RawCullBrowse.app`; this target does not export an App Store installer or notarize the app.
+
 Create a local debug archive:
 
 ```sh
@@ -131,7 +140,7 @@ Before testing managed downloads or submitting a release, configure the app and 
 
 The copied provenance records describe the original project's archives and processing history. RawCullBrowse needs its own packaging, upload, and release evidence. No model binaries are included in this repository.
 
-The Makefile also retains the earlier Developer ID notarization and DMG targets. `make build` still invokes those targets and does not match the current App Store export configuration; use `make archive-app-store` for this project's release workflow.
+The Makefile also retains the earlier Developer ID notarization and DMG targets. `make build` still invokes those targets and requires Developer ID signatures, which the local `make archive` target does not provide; use `make archive-app-store` for this project's release workflow.
 
 ## Project Layout
 
