@@ -107,8 +107,8 @@ nonisolated struct CLIPModelDownloadCatalog: Equatable, Sendable {
                 conversionInformationURL: requiredURL(
                     "https://github.com/apple/coreai-models/tree/bffc38fe48f50e4e962ac9772b64a5b55a605286/models/clip",
                 ),
-                expectedArchiveSHA256: "994939e74dbbe9844214d509267642939f5ddc535ae3bce4be36c8855bdfa600",
-                downloadByteCount: 282_967_354,
+                expectedArchiveSHA256: "4c6bc3cc95bb30c737840f49999a08eb63693ace597b133346cd044682af3a67",
+                downloadByteCount: 282_967_288,
                 installedByteCount: 307_800_172,
                 licence: RawCullBrowseAIModelLicenceDescriptor(
                     name: "MIT License",
@@ -142,8 +142,8 @@ nonisolated struct CLIPModelDownloadCatalog: Equatable, Sendable {
                 conversionInformationURL: requiredURL(
                     "https://github.com/apple/coreai-models/tree/bffc38fe48f50e4e962ac9772b64a5b55a605286/models/sam3",
                 ),
-                expectedArchiveSHA256: "08c9a4f58242d6eecaa322d65521fd788589ea682aa92a5cea03fa1e2f2681d4",
-                downloadByteCount: 1_542_689_931,
+                expectedArchiveSHA256: "142280713e579241f1d682e9258a780ac1760a78c766baffa88109c24dd99e9b",
+                downloadByteCount: 1_542_689_933,
                 installedByteCount: 1_667_570_378,
                 licence: RawCullBrowseAIModelLicenceDescriptor(
                     name: "SAM License",
@@ -177,8 +177,8 @@ nonisolated struct CLIPModelDownloadCatalog: Equatable, Sendable {
                 conversionInformationURL: requiredURL(
                     "https://github.com/apple/coreai-models",
                 ),
-                expectedArchiveSHA256: "115eebbfdff7cb688b26dd6e2dd6c110b3fce5d27f6d5e8f40f69192d1ca2364",
-                downloadByteCount: 3_754_599_603,
+                expectedArchiveSHA256: "b7a43127e87c929e9fc39b684a00495b2bfd3e6dabca889a9374f2560d6e6a99",
+                downloadByteCount: 3_754_599_579,
                 installedByteCount: 5_395_195_663,
                 licence: RawCullBrowseAIModelLicenceDescriptor(
                     name: "Apache License 2.0",
