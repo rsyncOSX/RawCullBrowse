@@ -1,0 +1,811 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		E90ED2132FE07ABB0034DF74 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E90ED2082FE07ABB0034DF74 /* Assets.xcassets */; };
+		E90ED21F2FE07AF50034DF74 /* RawCullBrowseicon.icon in Resources */ = {isa = PBXBuildFile; fileRef = E90ED21E2FE07AF50034DF74 /* RawCullBrowseicon.icon */; };
+		E9AA44F8305999690019DE2E /* CoreAICLIPBackend in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA44F7305999690019DE2E /* CoreAICLIPBackend */; };
+		E9AA44FA305999690019DE2E /* CoreAIEfficientSAMBackend in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA44F9305999690019DE2E /* CoreAIEfficientSAMBackend */; };
+		E9AA44FC305999690019DE2E /* CoreAIQwenBackend in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA44FB305999690019DE2E /* CoreAIQwenBackend */; };
+		E9AA44FE305999690019DE2E /* CoreAISAM3Backend in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA44FD305999690019DE2E /* CoreAISAM3Backend */; };
+		E9AA4500305999690019DE2E /* PhotoAIContracts in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA44FF305999690019DE2E /* PhotoAIContracts */; };
+		E9AA4502305999690019DE2E /* PhotoAIStorage in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA4501305999690019DE2E /* PhotoAIStorage */; };
+		E9AA4504305999690019DE2E /* PhotoAIWorkflows in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA4503305999690019DE2E /* PhotoAIWorkflows */; };
+		E9AA4506305999690019DE2E /* VisionFeaturePrintBackend in Frameworks */ = {isa = PBXBuildFile; productRef = E9AA4505305999690019DE2E /* VisionFeaturePrintBackend */; };
+		E9BCDDC92FF6962A004A4A95 /* RawParserKit in Frameworks */ = {isa = PBXBuildFile; productRef = E9BCDDC82FF6962A004A4A95 /* RawParserKit */; };
+		FB0000010000000000000001 /* RawCullCore in Frameworks */ = {isa = PBXBuildFile; productRef = FB0000010000000000000011 /* RawCullCore */; };
+		FD0000010000000000000001 /* BackgroundAssets.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FD0000010000000000000005 /* BackgroundAssets.framework */; };
+		FD0000010000000000000002 /* RawCullBrowseModelDownloader.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = FD0000010000000000000004 /* RawCullBrowseModelDownloader.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FA1000010000000000000018 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB000001000000000000000D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FB0000010000000000000009;
+			remoteInfo = RawCullBrowse;
+		};
+		FD0000010000000000000003 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB000001000000000000000D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FD0000010000000000000009;
+			remoteInfo = RawCullBrowseModelDownloader;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		FD000001000000000000000C /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				FD0000010000000000000002 /* RawCullBrowseModelDownloader.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		E90ED2082FE07ABB0034DF74 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E90ED21E2FE07AF50034DF74 /* RawCullBrowseicon.icon */ = {isa = PBXFileReference; lastKnownFileType = folder.iconcomposer.icon; path = RawCullBrowseicon.icon; sourceTree = "<group>"; };
+		FA1000010000000000000003 /* RawCullBrowseTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RawCullBrowseTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB0000010000000000000003 /* RawCullBrowse.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RawCullBrowse.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD0000010000000000000004 /* RawCullBrowseModelDownloader.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = RawCullBrowseModelDownloader.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		FD0000010000000000000005 /* BackgroundAssets.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = BackgroundAssets.framework; path = System/Library/Frameworks/BackgroundAssets.framework; sourceTree = SDKROOT; };
+		FD0000010000000000000012 /* RawCullBrowse.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RawCullBrowse.entitlements; sourceTree = "<group>"; };
+		FD0000010000000000000013 /* RawCullBrowse-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "RawCullBrowse-Info.plist"; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		FD0000010000000000000011 /* Exceptions for "RawCullBrowseModelDownloader" folder in "RawCullBrowseModelDownloader" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = FD0000010000000000000009 /* RawCullBrowseModelDownloader */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		FA1000010000000000000005 /* RawCullBrowseTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RawCullBrowseTests;
+			sourceTree = "<group>";
+		};
+		FB0000010000000000000005 /* RawCullBrowse */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RawCullBrowse;
+			sourceTree = "<group>";
+		};
+		FD0000010000000000000006 /* RawCullBrowseModelDownloader */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				FD0000010000000000000011 /* Exceptions for "RawCullBrowseModelDownloader" folder in "RawCullBrowseModelDownloader" target */,
+			);
+			path = RawCullBrowseModelDownloader;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FA1000010000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FB0000010000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E9AA4500305999690019DE2E /* PhotoAIContracts in Frameworks */,
+				FB0000010000000000000001 /* RawCullCore in Frameworks */,
+				E9AA4506305999690019DE2E /* VisionFeaturePrintBackend in Frameworks */,
+				E9AA44FC305999690019DE2E /* CoreAIQwenBackend in Frameworks */,
+				E9AA44FE305999690019DE2E /* CoreAISAM3Backend in Frameworks */,
+				E9BCDDC92FF6962A004A4A95 /* RawParserKit in Frameworks */,
+				E9AA44FA305999690019DE2E /* CoreAIEfficientSAMBackend in Frameworks */,
+				E9AA4504305999690019DE2E /* PhotoAIWorkflows in Frameworks */,
+				E9AA44F8305999690019DE2E /* CoreAICLIPBackend in Frameworks */,
+				E9AA4502305999690019DE2E /* PhotoAIStorage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FD0000010000000000000008 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FD0000010000000000000001 /* BackgroundAssets.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		FB0000010000000000000007 = {
+			isa = PBXGroup;
+			children = (
+				E90ED2082FE07ABB0034DF74 /* Assets.xcassets */,
+				E90ED21E2FE07AF50034DF74 /* RawCullBrowseicon.icon */,
+				FD0000010000000000000013 /* RawCullBrowse-Info.plist */,
+				FD0000010000000000000012 /* RawCullBrowse.entitlements */,
+				FB0000010000000000000005 /* RawCullBrowse */,
+				FA1000010000000000000005 /* RawCullBrowseTests */,
+				FD0000010000000000000006 /* RawCullBrowseModelDownloader */,
+				FD0000010000000000000007 /* Frameworks */,
+				FB0000010000000000000008 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		FB0000010000000000000008 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FB0000010000000000000003 /* RawCullBrowse.app */,
+				FA1000010000000000000003 /* RawCullBrowseTests.xctest */,
+				FD0000010000000000000004 /* RawCullBrowseModelDownloader.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		FD0000010000000000000007 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				FD0000010000000000000005 /* BackgroundAssets.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FA1000010000000000000009 /* RawCullBrowseTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FA100001000000000000000A /* Build configuration list for PBXNativeTarget "RawCullBrowseTests" */;
+			buildPhases = (
+				FA100001000000000000000B /* Sources */,
+				FA1000010000000000000006 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FA1000010000000000000017 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				FA1000010000000000000005 /* RawCullBrowseTests */,
+			);
+			name = RawCullBrowseTests;
+			packageProductDependencies = (
+			);
+			productName = RawCullBrowseTests;
+			productReference = FA1000010000000000000003 /* RawCullBrowseTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FB0000010000000000000009 /* RawCullBrowse */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FB000001000000000000000A /* Build configuration list for PBXNativeTarget "RawCullBrowse" */;
+			buildPhases = (
+				FB000001000000000000000B /* Sources */,
+				FB0000010000000000000006 /* Frameworks */,
+				FB000001000000000000000C /* Resources */,
+				FD000001000000000000000C /* Embed ExtensionKit Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FD000001000000000000000D /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				FB0000010000000000000005 /* RawCullBrowse */,
+			);
+			name = RawCullBrowse;
+			packageProductDependencies = (
+				FB0000010000000000000011 /* RawCullCore */,
+				E9BCDDC82FF6962A004A4A95 /* RawParserKit */,
+				E9AA44F7305999690019DE2E /* CoreAICLIPBackend */,
+				E9AA44F9305999690019DE2E /* CoreAIEfficientSAMBackend */,
+				E9AA44FB305999690019DE2E /* CoreAIQwenBackend */,
+				E9AA44FD305999690019DE2E /* CoreAISAM3Backend */,
+				E9AA44FF305999690019DE2E /* PhotoAIContracts */,
+				E9AA4501305999690019DE2E /* PhotoAIStorage */,
+				E9AA4503305999690019DE2E /* PhotoAIWorkflows */,
+				E9AA4505305999690019DE2E /* VisionFeaturePrintBackend */,
+			);
+			productName = RawCullBrowse;
+			productReference = FB0000010000000000000003 /* RawCullBrowse.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FD0000010000000000000009 /* RawCullBrowseModelDownloader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FD0000010000000000000010 /* Build configuration list for PBXNativeTarget "RawCullBrowseModelDownloader" */;
+			buildPhases = (
+				FD000001000000000000000B /* Sources */,
+				FD0000010000000000000008 /* Frameworks */,
+				FD000001000000000000000A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				FD0000010000000000000006 /* RawCullBrowseModelDownloader */,
+			);
+			name = RawCullBrowseModelDownloader;
+			packageProductDependencies = (
+			);
+			productName = RawCullBrowseModelDownloader;
+			productReference = FD0000010000000000000004 /* RawCullBrowseModelDownloader.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FB000001000000000000000D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2620;
+				LastUpgradeCheck = 2700;
+				TargetAttributes = {
+					FA1000010000000000000009 = {
+						CreatedOnToolsVersion = 27.0;
+						TestTargetID = FB0000010000000000000009;
+					};
+					FB0000010000000000000009 = {
+						CreatedOnToolsVersion = 26.2;
+					};
+					FD0000010000000000000009 = {
+						CreatedOnToolsVersion = 27.0;
+					};
+				};
+			};
+			buildConfigurationList = FB000001000000000000000E /* Build configuration list for PBXProject "RawCullBrowse" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = FB0000010000000000000007;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FB000001000000000000000F /* XCRemoteSwiftPackageReference "RawCullCore" */,
+				E9BCDDC72FF6962A004A4A95 /* XCRemoteSwiftPackageReference "RawParserKit" */,
+				E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = FB0000010000000000000008 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FB0000010000000000000009 /* RawCullBrowse */,
+				FA1000010000000000000009 /* RawCullBrowseTests */,
+				FD0000010000000000000009 /* RawCullBrowseModelDownloader */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FB000001000000000000000C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E90ED21F2FE07AF50034DF74 /* RawCullBrowseicon.icon in Resources */,
+				E90ED2132FE07ABB0034DF74 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FD000001000000000000000A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FA100001000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FB000001000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FD000001000000000000000B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FA1000010000000000000017 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FB0000010000000000000009 /* RawCullBrowse */;
+			targetProxy = FA1000010000000000000018 /* PBXContainerItemProxy */;
+		};
+		FD000001000000000000000D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FD0000010000000000000009 /* RawCullBrowseModelDownloader */;
+			targetProxy = FD0000010000000000000003 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		FA1000010000000000000015 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = no.blogspot.RawCullBrowseTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RawCullBrowse.app/Contents/MacOS/RawCullBrowse";
+			};
+			name = Debug;
+		};
+		FA1000010000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				PRODUCT_BUNDLE_IDENTIFIER = no.blogspot.RawCullBrowseTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RawCullBrowse.app/Contents/MacOS/RawCullBrowse";
+			};
+			name = Release;
+		};
+		FB0000010000000000000013 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		FB0000010000000000000014 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = arm64;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = macosx;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		FB0000010000000000000015 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = RawCullBrowseicon;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = RawCullBrowse.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "RawCullBrowse-Info.plist";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = no.blogspot.RawCullBrowse;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		FB0000010000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = RawCullBrowseicon;
+				AUTOMATION_APPLE_EVENTS = NO;
+				CODE_SIGN_ENTITLEMENTS = RawCullBrowse.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PHOTO_LIBRARY = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
+				ENABLE_USER_SELECTED_FILES = readwrite;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "RawCullBrowse-Info.plist";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = no.blogspot.RawCullBrowse;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				RUNTIME_EXCEPTION_ALLOW_DYLD_ENVIRONMENT_VARIABLES = NO;
+				RUNTIME_EXCEPTION_ALLOW_JIT = NO;
+				RUNTIME_EXCEPTION_ALLOW_UNSIGNED_EXECUTABLE_MEMORY = NO;
+				RUNTIME_EXCEPTION_DEBUGGING_TOOL = NO;
+				RUNTIME_EXCEPTION_DISABLE_EXECUTABLE_PAGE_PROTECTION = NO;
+				RUNTIME_EXCEPTION_DISABLE_LIBRARY_VALIDATION = NO;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		FD000001000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = RawCullBrowseModelDownloader/RawCullBrowseModelDownloader.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RawCullBrowseModelDownloader/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = no.blogspot.RawCullBrowse.ModelDownloader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		FD000001000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = RawCullBrowseModelDownloader/RawCullBrowseModelDownloader.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEVELOPMENT_TEAM = 93M47F4H9T;
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = RawCullBrowseModelDownloader/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 27.0;
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = no.blogspot.RawCullBrowse.ModelDownloader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_DISABLE_OUTWARD_ACTOR_ISOLATION = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FA100001000000000000000A /* Build configuration list for PBXNativeTarget "RawCullBrowseTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FA1000010000000000000015 /* Debug */,
+				FA1000010000000000000016 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FB000001000000000000000A /* Build configuration list for PBXNativeTarget "RawCullBrowse" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FB0000010000000000000015 /* Debug */,
+				FB0000010000000000000016 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FB000001000000000000000E /* Build configuration list for PBXProject "RawCullBrowse" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FB0000010000000000000013 /* Debug */,
+				FB0000010000000000000014 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FD0000010000000000000010 /* Build configuration list for PBXNativeTarget "RawCullBrowseModelDownloader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FD000001000000000000000E /* Debug */,
+				FD000001000000000000000F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rsyncOSX/PhotoAIKit";
+			requirement = {
+				kind = revision;
+				revision = 77cc1d84a5d98a485caa15be102c8a55eb3d7698;
+			};
+		};
+		E9BCDDC72FF6962A004A4A95 /* XCRemoteSwiftPackageReference "RawParserKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rsyncOSX/RawParserKit.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.3.1;
+			};
+		};
+		FB000001000000000000000F /* XCRemoteSwiftPackageReference "RawCullCore" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rsyncOSX/RawCullCore.git";
+			requirement = {
+				kind = exactVersion;
+				version = 1.1.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E9AA44F7305999690019DE2E /* CoreAICLIPBackend */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = CoreAICLIPBackend;
+		};
+		E9AA44F9305999690019DE2E /* CoreAIEfficientSAMBackend */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = CoreAIEfficientSAMBackend;
+		};
+		E9AA44FB305999690019DE2E /* CoreAIQwenBackend */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = CoreAIQwenBackend;
+		};
+		E9AA44FD305999690019DE2E /* CoreAISAM3Backend */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = CoreAISAM3Backend;
+		};
+		E9AA44FF305999690019DE2E /* PhotoAIContracts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = PhotoAIContracts;
+		};
+		E9AA4501305999690019DE2E /* PhotoAIStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = PhotoAIStorage;
+		};
+		E9AA4503305999690019DE2E /* PhotoAIWorkflows */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = PhotoAIWorkflows;
+		};
+		E9AA4505305999690019DE2E /* VisionFeaturePrintBackend */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9AA44F6305999690019DE2E /* XCRemoteSwiftPackageReference "PhotoAIKit" */;
+			productName = VisionFeaturePrintBackend;
+		};
+		E9BCDDC82FF6962A004A4A95 /* RawParserKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E9BCDDC72FF6962A004A4A95 /* XCRemoteSwiftPackageReference "RawParserKit" */;
+			productName = RawParserKit;
+		};
+		FB0000010000000000000011 /* RawCullCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FB000001000000000000000F /* XCRemoteSwiftPackageReference "RawCullCore" */;
+			productName = RawCullCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = FB000001000000000000000D /* Project object */;
+}
