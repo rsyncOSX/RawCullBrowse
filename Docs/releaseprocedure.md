@@ -13,10 +13,11 @@ Prepared 1 October 2026. This runbook covers developer-account registration, sig
 | Downloader bundle ID | `no.blogspot.RawCullBrowse.ModelDownloader` | Register a separate explicit App ID for the embedded extension |
 | Shared app group | `group.no.blogspot.RawCullBrowse.model-assets` | Register once and associate with both App IDs |
 | Test bundle ID | `no.blogspot.RawCullBrowseTests` | Local test target; no separate App Store Connect app is needed |
+| App Store Connect SKU | `RawCullBrowse-macOS` | Internal app record bookkeeping value |
 | Xcode scheme | `RawCullBrowse` | Archive this scheme |
 | Archive configuration | `Release` | This project has no separate AppStore configuration |
 | Minimum macOS version | `27.0` | Current deployment target; testing requires a compatible Mac |
-| App Store Connect numeric Apple ID | **Record after creating the app** | Required to target asset uploads; distinct from your sign-in Apple Account |
+| App Store Connect numeric Apple ID | `6818066038` | Required to target asset uploads; distinct from your sign-in Apple Account |
 
 The downloader is shipped inside RawCullBrowse. It does not have its own store listing. Model pack identifiers are also separate from bundle IDs and App Groups.
 
@@ -65,12 +66,13 @@ Open each target's **Signing & Capabilities** tab and resolve signing errors. If
 1. Sign in to [App Store Connect](https://appstoreconnect.apple.com/).
 2. In **Apps**, select **+ → New App**.
 3. Choose macOS, name `RawCullBrowse` if available, the intended primary language, and bundle ID `no.blogspot.RawCullBrowse`.
-4. Choose a unique internal SKU, for example `RawCullBrowse-macOS`. The SKU is an account bookkeeping value, not a bundle ID.
+4. Use the registered internal SKU `RawCullBrowse-macOS`. The SKU is an account bookkeeping value, not a bundle ID.
 5. Set access for your intended team members and create the record.
-6. Open **App Information** and record its numeric **Apple ID** below. Do not use RawCull's numeric ID `6759362764` for RawCullBrowse uploads.
+6. Open **App Information** and confirm its numeric **Apple ID** is `6818066038`. Do not use RawCull's numeric ID `6759362764` for RawCullBrowse uploads.
 
 ```text
-RawCullBrowse numeric Apple ID: ____________________
+RawCullBrowse numeric Apple ID: 6818066038
+RawCullBrowse SKU:              RawCullBrowse-macOS
 Selected developer team:       ____________________
 Registration/signing checked:  ____________________
 ```
@@ -180,13 +182,13 @@ Apple documents `altool` asset upload with an archive path, the app's numeric Ap
 1. Confirm the active Xcode installation using `xcode-select -p` and `xcodebuild -version`.
 2. Run `xcrun altool --help` and confirm it works before starting a multi-gigabyte upload. During preparation of this runbook, the local invocation failed because `Defaults.properties` was missing; the command-line upload route needs that tooling issue resolved first. Transporter is the alternative below.
 3. Authenticate using an app-specific password stored in Keychain. Use the credential-storage syntax supported by your installed `altool`; the examples below assume the Keychain item is named `RawCullBrowseASC`. Keep the password out of this document and shell history.
-4. Replace the two placeholders below with **RawCullBrowse's numeric Apple ID** and your sign-in email.
+4. The commands below use **RawCullBrowse's numeric Apple ID `6818066038`**. Replace the email placeholder with your sign-in email.
 5. Upload CLIP first:
 
 ```sh
 xcrun altool \
   --upload-asset-pack /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/clip-datacomp.aar \
-  --apple-id '<RAWCULLBROWSE_NUMERIC_APPLE_ID>' \
+  --apple-id '6818066038' \
   -u '<APP_STORE_CONNECT_EMAIL>' \
   -p '@keychain:RawCullBrowseASC'
 ```
@@ -197,7 +199,7 @@ xcrun altool \
 ```sh
 xcrun altool \
   --upload-asset-pack /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/sam3.aar \
-  --apple-id '<RAWCULLBROWSE_NUMERIC_APPLE_ID>' \
+  --apple-id '6818066038' \
   -u '<APP_STORE_CONNECT_EMAIL>' \
   -p '@keychain:RawCullBrowseASC'
 ```
@@ -207,7 +209,7 @@ xcrun altool \
 ```sh
 xcrun altool \
   --upload-asset-pack /Users/thomas/ModelAssets/Release/Output/RawCullBrowse/qwen3-vl-2b.aar \
-  --apple-id '<RAWCULLBROWSE_NUMERIC_APPLE_ID>' \
+  --apple-id '6818066038' \
   -u '<APP_STORE_CONNECT_EMAIL>' \
   -p '@keychain:RawCullBrowseASC'
 ```
