@@ -64,6 +64,32 @@ RawCullBrowse executes the queries sequentially using the current result limit a
 
 Semantic similarity is a retrieval aid, not a statement of fact. Results may be inaccurate, incomplete, biased, or unexpected and should not be used for safety-critical or other high-impact decisions.
 
+## Privacy Policy
+
+Effective date: October 1, 2026.
+
+RawCullBrowse processes your photographs on your Mac. The app does not collect or transmit your photographs, image metadata, search queries, prompts, embeddings, or AI assessments to the developer. It does not include advertising, tracking, or analytics services, and does not require an account.
+
+### Local access and storage
+
+The app accesses folders and files you select through macOS permissions. It reads photographs and their metadata to provide previews, search, and local AI analysis. CLIP, SAM 3, and Qwen model inference runs locally; photographs and prompts are not uploaded for AI processing.
+
+App settings, remembered folder access, image caches, and downloaded models are stored locally. Semantic indexes are stored in the hidden `.clipbench` directory inside the folder you index and may contain image paths and embeddings. If you run Semantic Test, its report is saved in that folder and includes queries and result paths. These files remain until you remove them or use the applicable cleanup controls.
+
+You can clear image caches in **Settings > Cache**, remove managed models through **Download AI Models**, and delete `.clipbench` directories and semantic test reports in Finder. Removing the app does not automatically remove indexes or reports from your photo folders. You control any copying, backup, or synchronization of those folders through other software.
+
+### Downloads and external links
+
+Optional AI model packs are downloaded through Apple's Managed Background Assets service. Apple handles those network requests under its own [Privacy Policy](https://www.apple.com/legal/privacy/). Model downloads do not require uploading your photographs or prompts.
+
+If you open an external model card, licence, or other website link, your browser connects to that website, whose privacy policy applies.
+
+### Contact and changes
+
+For privacy questions, contact the developer through the [RawCullBrowse issue tracker](https://github.com/rsyncOSX/RawCullBrowse/issues). Issues are public; do not include private photographs or other sensitive information. Any information you choose to submit there is handled by GitHub under its [Privacy Statement](https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement).
+
+This policy will be updated if the app's privacy practices change, with the effective date revised above.
+
 ## Swift package dependencies
 
 Requirements are pinned to exact versions or revisions in the Xcode project and recorded in `RawCullBrowse.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`. Revision-pinned dependencies are shown with their complete commit.
