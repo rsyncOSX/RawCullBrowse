@@ -274,12 +274,18 @@ struct BrowserZoomOverlayView: View {
             adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1...1)
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1...1)
             adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1...1)
+            if let error = viewModel.raw9SidecarError {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.yellow)
+                    .help(error)
+                    .accessibilityLabel(error)
+            }
             Button("Reset") { viewModel.raw9Adjustments = RAW9Adjustments() }
                 .disabled(viewModel.raw9Adjustments == RAW9Adjustments())
         }
         .padding(10)
         .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
-        .help("RAW 9 preview adjustments. Noise, sharpness and contrast are offsets from camera defaults. Originals are unchanged.")
+        .help("RAW 9 adjustments are saved automatically to a sidecar beside the original. Noise, sharpness and contrast are offsets from camera defaults.")
     }
 
     private func adjustmentSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {

@@ -23,8 +23,32 @@ final class FileBrowserViewModel {
     var isScanning = false
     var isCreatingThumbnails = false
     var zoomOverlayVisible = false
-    var raw9Adjustments = RAW9Adjustments()
+    var raw9Adjustments = RAW9Adjustments() {
+        didSet {
+            guard !isRestoringRAW9Adjustments, raw9Adjustments != oldValue,
+                  let url = raw9AdjustmentURL else { return }
+            let adjustments = raw9Adjustments
+            let previousSave = raw9SidecarSaveTask
+            // Preserve write order and finish saves even after navigating away.
+            raw9SidecarSaveTask = Task {
+                await previousSave?.value
+                do {
+                    try await raw9SidecarStore.save(adjustments, for: url)
+                    if raw9AdjustmentURL == url { raw9SidecarError = nil }
+                } catch {
+                    if raw9AdjustmentURL == url {
+                        raw9SidecarError = "Could not save RAW 9 sidecar: \(error.localizedDescription)"
+                    }
+                }
+            }
+        }
+    }
+    var raw9SidecarError: String?
+    private var isRestoringRAW9Adjustments = false
+    private let raw9SidecarStore = RAW9SidecarStore()
+    private var raw9SidecarSaveTask: Task<Void, Never>?
     private var raw9AdjustmentURL: URL?
+    private var raw9LoadedSidecarURL: URL?
     private let raw9Renderer = RAW9PreviewRenderer()
     var useDevelopedRAW = false
     var zoomImageError: String?
@@ -1156,11 +1180,16 @@ final class FileBrowserViewModel {
         }
         guard let selectedFile else { return }
 
+        let shouldLoadSidecar = raw9LoadedSidecarURL != selectedFile.url
         if raw9AdjustmentURL != selectedFile.url {
+            isRestoringRAW9Adjustments = true
             raw9Adjustments = RAW9Adjustments()
+            isRestoringRAW9Adjustments = false
             raw9AdjustmentURL = selectedFile.url
+            raw9SidecarError = nil
         }
-        let adjustments = raw9Adjustments
+        let initialAdjustments = raw9Adjustments
+        let pendingSave = raw9SidecarSaveTask
         zoomTask?.cancel()
         if !preserveViewport { zoomImage = nil }
         zoomImageError = nil
@@ -1174,12 +1203,36 @@ final class FileBrowserViewModel {
         }
         zoomOverlayVisible = true
         let previewSize = settings.thumbnailSizeFullSize
-        let developRAW = useDevelopedRAW && !SupportedFileType.isRenderedImage(selectedFile.url)
         zoomTask = Task {
             async let exifInfo = RawImageLoader.shared.metadata(for: selectedFile.url)
             do {
+                let supportsRAW9 = await RAW9Support.isSupported(for: selectedFile.url)
+                try Task.checkCancellation()
+                if shouldLoadSidecar && supportsRAW9 {
+                    await pendingSave?.value
+                    do {
+                        let saved = try await raw9SidecarStore.load(for: selectedFile.url)
+                        try Task.checkCancellation()
+                        raw9LoadedSidecarURL = selectedFile.url
+                        if raw9Adjustments == initialAdjustments, let saved {
+                            isRestoringRAW9Adjustments = true
+                            raw9Adjustments = saved
+                            isRestoringRAW9Adjustments = false
+                            useDevelopedRAW = true
+                        }
+                    } catch is CancellationError {
+                        throw CancellationError()
+                    } catch {
+                        try Task.checkCancellation()
+                        raw9LoadedSidecarURL = selectedFile.url
+                        raw9SidecarError = "Could not read RAW 9 sidecar: \(error.localizedDescription)"
+                    }
+                }
+                try Task.checkCancellation()
+                let adjustments = raw9Adjustments
+                let developRAW = useDevelopedRAW && !SupportedFileType.isRenderedImage(selectedFile.url)
                 let loadedImage: CGImage? = if developRAW {
-                    if await RAW9Support.isSupported(for: selectedFile.url) {
+                    if supportsRAW9 {
                         try await raw9Renderer.render(url: selectedFile.url, adjustments: adjustments)
                     } else {
                         try await RawImageLoader.shared.developedPreview(for: selectedFile.url)
@@ -1206,6 +1259,8 @@ final class FileBrowserViewModel {
     }
 
     func closeZoom() {
+        raw9AdjustmentURL = nil
+        raw9LoadedSidecarURL = nil
         zoomTask?.cancel()
         zoomTask = nil
         zoomOverlayVisible = false

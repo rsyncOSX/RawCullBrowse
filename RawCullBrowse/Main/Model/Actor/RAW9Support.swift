@@ -25,7 +25,7 @@ nonisolated enum RAW9Support {
 }
 
 /// Preview-only adjustments; zero preserves the camera's calibrated defaults.
-nonisolated struct RAW9Adjustments: Equatable, Sendable {
+nonisolated struct RAW9Adjustments: Equatable, Sendable, Codable {
     var exposure: Double = 0
     var noiseReduction: Double = 0
     var sharpness: Double = 0
@@ -62,5 +62,47 @@ actor RAW9PreviewRenderer {
         else { throw CocoaError(.fileReadUnknown) }
         try Task.checkCancellation()
         return image
+    }
+}
+
+/// An app-specific sidecar, separate from XMP used by other photo editors.
+actor RAW9SidecarStore {
+    private struct Document: Codable {
+        var version: Int = 1
+        var adjustments: RAW9Adjustments
+    }
+
+    nonisolated static func sidecarURL(for rawURL: URL) -> URL {
+        rawURL.appendingPathExtension("rawcull-raw9.json")
+    }
+
+    func load(for rawURL: URL) throws -> RAW9Adjustments? {
+        let url = Self.sidecarURL(for: rawURL)
+        let data: Data
+        do {
+            data = try Data(contentsOf: url)
+        } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
+            return nil
+        }
+        let document = try JSONDecoder().decode(Document.self, from: data)
+        guard document.version == 1, Self.isValid(document.adjustments) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        return document.adjustments
+    }
+
+    func save(_ adjustments: RAW9Adjustments, for rawURL: URL) throws {
+        guard Self.isValid(adjustments) else { throw CocoaError(.fileWriteInvalidFileName) }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(Document(adjustments: adjustments))
+        try data.write(to: Self.sidecarURL(for: rawURL), options: .atomic)
+    }
+
+    private nonisolated static func isValid(_ value: RAW9Adjustments) -> Bool {
+        value.exposure.isFinite && (-3...3).contains(value.exposure)
+            && value.noiseReduction.isFinite && (-1...1).contains(value.noiseReduction)
+            && value.sharpness.isFinite && (-1...1).contains(value.sharpness)
+            && value.contrast.isFinite && (-1...1).contains(value.contrast)
     }
 }
