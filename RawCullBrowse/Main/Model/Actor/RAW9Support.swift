@@ -57,10 +57,13 @@ actor RAW9PreviewRenderer {
         filter.luminanceNoiseReductionAmount = min(1, max(0, defaults.noise + Float(adjustments.noiseReduction)))
         filter.sharpnessAmount = min(1, max(0, defaults.sharpness + Float(adjustments.sharpness)))
         filter.contrastAmount = min(1, max(0, defaults.contrast + Float(adjustments.contrast)))
+        // Finish the expensive RAW render on this actor. A deferred CGImage can
+        // perform that work when SwiftUI draws it, blocking the main thread.
         guard let output = filter.outputImage,
               let image = context.createCGImage(
                   output, from: output.extent, format: bitDepth == .eightBit ? .RGBA8 : .RGBAh,
                   colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+                  deferred: false,
               )
         else { throw CocoaError(.fileReadUnknown) }
         try Task.checkCancellation()
