@@ -36,7 +36,7 @@ nonisolated struct RAW9Adjustments: Equatable, Sendable, Codable {
 actor RAW9PreviewRenderer {
     private var sourceURL: URL?
     private var filter: CIRAWFilter?
-    private let context = CIContext(options: [.cacheIntermediates: true])
+    private lazy var context = CIContext(options: [.cacheIntermediates: true])
     private var defaults: (noise: Float, sharpness: Float, contrast: Float) = (0, 0, 0)
 
     func render(url: URL, adjustments: RAW9Adjustments) throws -> CGImage {
@@ -58,7 +58,10 @@ actor RAW9PreviewRenderer {
         filter.sharpnessAmount = min(1, max(0, defaults.sharpness + Float(adjustments.sharpness)))
         filter.contrastAmount = min(1, max(0, defaults.contrast + Float(adjustments.contrast)))
         guard let output = filter.outputImage,
-              let image = context.createCGImage(output, from: output.extent)
+              let image = context.createCGImage(
+                output, from: output.extent, format: .RGBA8,
+                colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+            )
         else { throw CocoaError(.fileReadUnknown) }
         try Task.checkCancellation()
         return image

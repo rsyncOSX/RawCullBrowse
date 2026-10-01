@@ -19,6 +19,7 @@ struct BrowserZoomOverlayView: View {
     }
 
     @State private var raw9SupportedURL: URL?
+    @State private var isEditingRAWAdjustment = false
     @State private var adjustmentRefreshTask: Task<Void, Never>?
     @State private var lastScale: CGFloat = 1.0
     @State private var lastOffset: CGSize = .zero
@@ -251,20 +252,25 @@ struct BrowserZoomOverlayView: View {
             raw9SupportedURL = supported ? url : nil
         }
         .onChange(of: viewModel.raw9Adjustments) {
-            adjustmentRefreshTask?.cancel()
-            guard raw9SupportedURL == viewModel.selectedFile?.url, raw9SupportedURL != nil else { return }
-            adjustmentRefreshTask = Task {
-                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-                guard !Task.isCancelled else { return }
-                if viewModel.useDevelopedRAW {
-                    viewModel.openZoom(preserveViewport: true)
-                } else {
-                    viewModel.useDevelopedRAW = true
-                }
-            }
+            guard !isEditingRAWAdjustment else { return }
+            scheduleRAWAdjustmentRefresh()
         }
         .task(id: subjectOutlineTaskID) {
             await loadSubjectOutline()
+        }
+    }
+
+    private func scheduleRAWAdjustmentRefresh() {
+        adjustmentRefreshTask?.cancel()
+        guard raw9SupportedURL == viewModel.selectedFile?.url, raw9SupportedURL != nil else { return }
+        adjustmentRefreshTask = Task {
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+            guard !Task.isCancelled else { return }
+            if viewModel.useDevelopedRAW {
+                viewModel.refreshRAW9Preview()
+            } else {
+                viewModel.useDevelopedRAW = true
+            }
         }
     }
 
@@ -296,7 +302,11 @@ struct BrowserZoomOverlayView: View {
                     .monospacedDigit()
             }
             .font(.caption)
-            Slider(value: value, in: range)
+            Slider(value: value, in: range) { editing in
+                isEditingRAWAdjustment = editing
+                adjustmentRefreshTask?.cancel()
+                if !editing { scheduleRAWAdjustmentRefresh() }
+            }
                 .accessibilityLabel(title)
         }
         .frame(width: 90)

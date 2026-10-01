@@ -29,12 +29,19 @@ final class FileBrowserViewModel {
                   let url = raw9AdjustmentURL else { return }
             let adjustments = raw9Adjustments
             let previousSave = raw9SidecarSaveTask
-            // Preserve write order and finish saves even after navigating away.
+            if raw9SidecarSaveURL == url { previousSave?.cancel() }
+            raw9SidecarSaveURL = url
+            // Coalesce drag events, preserve write order across files, and finish
+            // the final save even after navigating away or closing zoom.
             raw9SidecarSaveTask = Task {
                 await previousSave?.value
                 do {
+                    try await Task.sleep(for: .milliseconds(300))
+                    try Task.checkCancellation()
                     try await raw9SidecarStore.save(adjustments, for: url)
                     if raw9AdjustmentURL == url { raw9SidecarError = nil }
+                } catch is CancellationError {
+                    return
                 } catch {
                     if raw9AdjustmentURL == url {
                         raw9SidecarError = "Could not save RAW 9 sidecar: \(error.localizedDescription)"
@@ -47,6 +54,7 @@ final class FileBrowserViewModel {
     private var isRestoringRAW9Adjustments = false
     private let raw9SidecarStore = RAW9SidecarStore()
     private var raw9SidecarSaveTask: Task<Void, Never>?
+    private var raw9SidecarSaveURL: URL?
     private var raw9AdjustmentURL: URL?
     private var raw9LoadedSidecarURL: URL?
     private let raw9Renderer = RAW9PreviewRenderer()
@@ -1255,6 +1263,25 @@ final class FileBrowserViewModel {
             guard !Task.isCancelled else { return }
             zoomExifInfo = loadedExifInfo
             isZoomExifInfoLoaded = true
+        }
+    }
+
+    /// Refresh only the rendered pixels; retain metadata and viewport state.
+    func refreshRAW9Preview() {
+        guard zoomOverlayVisible, useDevelopedRAW,
+              let url = selectedFile?.url, raw9AdjustmentURL == url else { return }
+        let adjustments = raw9Adjustments
+        zoomTask?.cancel()
+        zoomTask = Task {
+            do {
+                let image = try await raw9Renderer.render(url: url, adjustments: adjustments)
+                guard !Task.isCancelled, selectedFile?.url == url, useDevelopedRAW else { return }
+                zoomImage = image
+                zoomImageError = nil
+            } catch {
+                guard !Task.isCancelled, selectedFile?.url == url else { return }
+                zoomImageError = "RAW development failed: \(error.localizedDescription)"
+            }
         }
     }
 
