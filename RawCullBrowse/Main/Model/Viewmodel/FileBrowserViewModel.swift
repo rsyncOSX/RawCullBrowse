@@ -23,6 +23,9 @@ final class FileBrowserViewModel {
     var isScanning = false
     var isCreatingThumbnails = false
     var zoomOverlayVisible = false
+    var raw9Adjustments = RAW9Adjustments()
+    private var raw9AdjustmentURL: URL?
+    private let raw9Renderer = RAW9PreviewRenderer()
     var useDevelopedRAW = false
     var zoomImageError: String?
     var zoomImage: CGImage?
@@ -1146,21 +1149,29 @@ final class FileBrowserViewModel {
         for file: BrowserFileItem? = nil,
         initialZoomMode: BrowserZoomInitialMode = .fit,
         showFocusPointOnOpen: Bool = false,
+        preserveViewport: Bool = false,
     ) {
         if let file {
             selectedFileID = file.id
         }
         guard let selectedFile else { return }
 
+        if raw9AdjustmentURL != selectedFile.url {
+            raw9Adjustments = RAW9Adjustments()
+            raw9AdjustmentURL = selectedFile.url
+        }
+        let adjustments = raw9Adjustments
         zoomTask?.cancel()
-        zoomImage = nil
+        if !preserveViewport { zoomImage = nil }
         zoomImageError = nil
         zoomExifInfo = nil
         isZoomExifInfoLoaded = false
-        zoomLaunchContext = BrowserZoomLaunchContext(
-            initialZoomMode: initialZoomMode,
-            showFocusPointOnOpen: showFocusPointOnOpen,
-        )
+        if !preserveViewport {
+            zoomLaunchContext = BrowserZoomLaunchContext(
+                initialZoomMode: initialZoomMode,
+                showFocusPointOnOpen: showFocusPointOnOpen,
+            )
+        }
         zoomOverlayVisible = true
         let previewSize = settings.thumbnailSizeFullSize
         let developRAW = useDevelopedRAW && !SupportedFileType.isRenderedImage(selectedFile.url)
@@ -1168,7 +1179,11 @@ final class FileBrowserViewModel {
             async let exifInfo = RawImageLoader.shared.metadata(for: selectedFile.url)
             do {
                 let loadedImage: CGImage? = if developRAW {
-                    try await RawImageLoader.shared.developedPreview(for: selectedFile.url)
+                    if await RAW9Support.isSupported(for: selectedFile.url) {
+                        try await raw9Renderer.render(url: selectedFile.url, adjustments: adjustments)
+                    } else {
+                        try await RawImageLoader.shared.developedPreview(for: selectedFile.url)
+                    }
                 } else {
                     await RawImageLoader.shared.previewImage(
                         for: selectedFile.url, maxPixelSize: previewSize,

@@ -23,3 +23,44 @@ nonisolated enum RAW9Support {
         }
     }
 }
+
+/// Preview-only adjustments; zero preserves the camera's calibrated defaults.
+nonisolated struct RAW9Adjustments: Equatable, Sendable {
+    var exposure: Double = 0
+    var noiseReduction: Double = 0
+    var sharpness: Double = 0
+    var contrast: Double = 0
+}
+
+/// Keeps the filter and its intermediate render cache off the main actor.
+actor RAW9PreviewRenderer {
+    private var sourceURL: URL?
+    private var filter: CIRAWFilter?
+    private let context = CIContext(options: [.cacheIntermediates: true])
+    private var defaults: (noise: Float, sharpness: Float, contrast: Float) = (0, 0, 0)
+
+    func render(url: URL, adjustments: RAW9Adjustments) throws -> CGImage {
+        try Task.checkCancellation()
+        if sourceURL != url {
+            filter = nil
+            sourceURL = nil
+            guard let loaded = CIRAWFilter(imageURL: url),
+                  let version = RAW9Support.preferredVersion(in: loaded.supportedDecoderVersions)
+            else { throw CocoaError(.fileReadUnsupportedScheme) }
+            loaded.decoderVersion = version
+            defaults = (loaded.luminanceNoiseReductionAmount, loaded.sharpnessAmount, loaded.contrastAmount)
+            filter = loaded
+            sourceURL = url
+        }
+        guard let filter else { throw CocoaError(.fileReadUnknown) }
+        filter.exposure = Float(adjustments.exposure)
+        filter.luminanceNoiseReductionAmount = min(1, max(0, defaults.noise + Float(adjustments.noiseReduction)))
+        filter.sharpnessAmount = min(1, max(0, defaults.sharpness + Float(adjustments.sharpness)))
+        filter.contrastAmount = min(1, max(0, defaults.contrast + Float(adjustments.contrast)))
+        guard let output = filter.outputImage,
+              let image = context.createCGImage(output, from: output.extent)
+        else { throw CocoaError(.fileReadUnknown) }
+        try Task.checkCancellation()
+        return image
+    }
+}

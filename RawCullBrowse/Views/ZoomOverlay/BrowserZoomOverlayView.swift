@@ -19,6 +19,7 @@ struct BrowserZoomOverlayView: View {
     }
 
     @State private var raw9SupportedURL: URL?
+    @State private var adjustmentRefreshTask: Task<Void, Never>?
     @State private var lastScale: CGFloat = 1.0
     @State private var lastOffset: CGSize = .zero
     @State private var lastMetadataOffset: CGSize = .zero
@@ -171,7 +172,12 @@ struct BrowserZoomOverlayView: View {
 
                 Spacer()
 
-                zoomControlRow
+                ScrollView(.horizontal) {
+                    zoomControlRow
+                        .frame(maxWidth: .infinity)
+                }
+                    .scrollIndicators(.hidden)
+                    .frame(height: 66)
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.horizontal, 18)
@@ -231,24 +237,70 @@ struct BrowserZoomOverlayView: View {
             installKeyMonitor()
         }
         .onDisappear {
+            adjustmentRefreshTask?.cancel()
             removeKeyMonitor()
             subjectOutline = nil
             isLoadingSubjectOutline = false
         }
         .task(id: viewModel.selectedFile?.url) {
+            adjustmentRefreshTask?.cancel()
             raw9SupportedURL = nil
             guard let url = viewModel.selectedFile?.url else { return }
             let supported = await RAW9Support.isSupported(for: url)
             guard !Task.isCancelled else { return }
             raw9SupportedURL = supported ? url : nil
         }
+        .onChange(of: viewModel.raw9Adjustments) {
+            adjustmentRefreshTask?.cancel()
+            guard raw9SupportedURL == viewModel.selectedFile?.url, raw9SupportedURL != nil else { return }
+            adjustmentRefreshTask = Task {
+                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+                guard !Task.isCancelled else { return }
+                if viewModel.useDevelopedRAW {
+                    viewModel.openZoom(preserveViewport: true)
+                } else {
+                    viewModel.useDevelopedRAW = true
+                }
+            }
+        }
         .task(id: subjectOutlineTaskID) {
             await loadSubjectOutline()
         }
     }
 
+    private var rawAdjustmentControls: some View {
+        HStack(spacing: 10) {
+            adjustmentSlider("Exposure", value: $viewModel.raw9Adjustments.exposure, range: -3...3)
+            adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1...1)
+            adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1...1)
+            adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1...1)
+            Button("Reset") { viewModel.raw9Adjustments = RAW9Adjustments() }
+                .disabled(viewModel.raw9Adjustments == RAW9Adjustments())
+        }
+        .padding(10)
+        .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
+        .help("RAW 9 preview adjustments. Noise, sharpness and contrast are offsets from camera defaults. Originals are unchanged.")
+    }
+
+    private func adjustmentSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+        VStack(spacing: 3) {
+            HStack {
+                Text(title)
+                Text(value.wrappedValue, format: .number.precision(.fractionLength(1)))
+                    .monospacedDigit()
+            }
+            .font(.caption)
+            Slider(value: value, in: range)
+                .accessibilityLabel(title)
+        }
+        .frame(width: 90)
+    }
+
     private var zoomControlRow: some View {
         HStack(spacing: 12) {
+            if raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url {
+                rawAdjustmentControls
+            }
             Picker("", selection: $viewModel.useDevelopedRAW) {
                 Text("JPG").tag(false)
                 Text(raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url ? "RAW 9" : "RAW").tag(true)
