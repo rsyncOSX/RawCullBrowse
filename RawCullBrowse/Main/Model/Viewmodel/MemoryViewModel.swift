@@ -1,6 +1,6 @@
 //
 //  MemoryViewModel.swift
-//  RawCull
+//  RawCullBrowse
 //
 //  Created by Thomas Evensen on 12/02/2026.
 //

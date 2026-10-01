@@ -46,9 +46,9 @@ final class DeepAIReviewRuntime {
     func activateSAM3(
         at url: URL?,
         controller: DeepAIReviewController,
-    ) async -> RawCullAICapabilityStatus {
+    ) async -> RawCullBrowseAICapabilityStatus {
         guard let url else {
-            let availability = RawCullAICapabilityStatus.missing(
+            let availability = RawCullBrowseAICapabilityStatus.missing(
                 expectedLocations: [Self.defaultSAM3Directory()],
             )
             installUnavailable(
@@ -64,7 +64,7 @@ final class DeepAIReviewRuntime {
         case let .available(resource):
             do {
                 let provider = try CoreAISAM3Provider.factory.makeProvider(from: resource)
-                let availability = RawCullAICapabilityStatus.available(location: resource.bundleURL)
+                let availability = RawCullBrowseAICapabilityStatus.available(location: resource.bundleURL)
                 install(
                     provider: provider,
                     controller: controller,
@@ -72,7 +72,7 @@ final class DeepAIReviewRuntime {
                 )
                 return availability
             } catch {
-                let availability = RawCullAICapabilityStatus.invalid(
+                let availability = RawCullBrowseAICapabilityStatus.invalid(
                     location: standardizedURL,
                     reason: String(describing: error),
                 )
@@ -84,7 +84,7 @@ final class DeepAIReviewRuntime {
             }
 
         case .missing:
-            let availability = RawCullAICapabilityStatus.missing(
+            let availability = RawCullBrowseAICapabilityStatus.missing(
                 expectedLocations: [standardizedURL],
             )
             installUnavailable(
@@ -94,7 +94,7 @@ final class DeepAIReviewRuntime {
             return availability
 
         case let .invalid(url, reason):
-            let availability = RawCullAICapabilityStatus.invalid(location: url, reason: reason)
+            let availability = RawCullBrowseAICapabilityStatus.invalid(location: url, reason: reason)
             installUnavailable(
                 controller: controller,
                 availability: availability,
@@ -106,7 +106,7 @@ final class DeepAIReviewRuntime {
     private func install(
         provider: any SubjectSegmenting,
         controller: DeepAIReviewController,
-        availability: RawCullAICapabilityStatus,
+        availability: RawCullBrowseAICapabilityStatus,
     ) {
         if activeModelIdentity != provider.modelIdentity {
             activeModelIdentity = provider.modelIdentity
@@ -132,7 +132,7 @@ final class DeepAIReviewRuntime {
         }
 
         controller.install(
-            service: RawCullDeepAIReviewPipeline(
+            service: RawCullBrowseDeepAIReviewPipeline(
                 selector: subjectMaskSelector,
                 maximumPixelSize: min(inputMaxSide, deepReviewMaximumPixelSize),
             ),
@@ -148,7 +148,7 @@ final class DeepAIReviewRuntime {
 
     private func installUnavailable(
         controller: DeepAIReviewController,
-        availability: RawCullAICapabilityStatus,
+        availability: RawCullBrowseAICapabilityStatus,
     ) {
         activeModelIdentity = nil
         controller.install(

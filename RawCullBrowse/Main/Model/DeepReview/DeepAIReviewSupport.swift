@@ -1,6 +1,6 @@
 import Foundation
 
-nonisolated enum RawCullAICapabilityStatus: Equatable, Sendable {
+nonisolated enum RawCullBrowseAICapabilityStatus: Equatable, Sendable {
     case checking(expectedLocations: [URL])
     case available(location: URL?)
     case missing(expectedLocations: [URL])

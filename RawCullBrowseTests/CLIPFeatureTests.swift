@@ -20,17 +20,17 @@ struct CLIPFeatureTests {
     }
 
     @Test
-    func `Managed AI catalog contains CLIP and SAM 3 asset packs`() {
+    func `Managed AI catalog contains CLIP, SAM 3, and Qwen asset packs`() {
         let catalog = CLIPModelDownloadCatalog.production
 
-        #expect(catalog.models.map(\.id) == [.clipDataComp, .sam3])
+        #expect(catalog.models.map(\.id) == [.clipDataComp, .sam3, .qwen3VL2B])
         #expect(
             catalog.descriptor(for: .clipDataComp)?.assetPackID
-                == "no.blogspot.RawCull.models.clip-datacomp",
+                == "rawcullbrowse-clip-datacomp",
         )
         #expect(
             catalog.descriptor(for: .sam3)?.assetPackID
-                == "no.blogspot.RawCull.models.sam3",
+                == "rawcullbrowse-sam3",
         )
         #expect(
             catalog.descriptor(for: .clipDataComp)?.assetPackModelPath

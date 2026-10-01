@@ -1,0 +1,56 @@
+{
+  "toolsVersion": "1.0.0",
+  "assetPacks": [
+    {
+      "assetPackID": "rawcullbrowse-clip-datacomp",
+      "downloadPolicy": {
+        "onDemand": {}
+      },
+      "fileSelectors": [
+        {
+          "directory": {
+            "source": "CLIP-DataComp",
+            "destination": "Models/CLIP-DataComp"
+          }
+        }
+      ],
+      "platforms": [
+        "macOS"
+      ]
+    },
+    {
+      "assetPackID": "rawcullbrowse-sam3",
+      "downloadPolicy": {
+        "onDemand": {}
+      },
+      "fileSelectors": [
+        {
+          "directory": {
+            "source": "SAM3",
+            "destination": "Models/SAM3"
+          }
+        }
+      ],
+      "platforms": [
+        "macOS"
+      ]
+    },
+    {
+      "assetPackID": "rawcullbrowse-qwen3-vl-2b",
+      "downloadPolicy": {
+        "onDemand": {}
+      },
+      "fileSelectors": [
+        {
+          "directory": {
+            "source": "Qwen/qwen3_vl_2b",
+            "destination": "Models/Qwen/qwen3_vl_2b"
+          }
+        }
+      ],
+      "platforms": [
+        "macOS"
+      ]
+    }
+  ]
+}

@@ -60,7 +60,7 @@ final class FileBrowserViewModel {
     var qwenFeatureError: String?
     var isQwenResponding = false
     private(set) var qwenModelStatus: QwenModelStatus = .notConfigured
-    private(set) var sam3ModelStatus: RawCullAICapabilityStatus = .missing(expectedLocations: [])
+    private(set) var sam3ModelStatus: RawCullBrowseAICapabilityStatus = .missing(expectedLocations: [])
     private(set) var clipModelDownloadStates: [CLIPModelDownloadID: CLIPModelDownloadState] =
         Dictionary(uniqueKeysWithValues: CLIPModelDownloadID.allCases.map { ($0, .checking) })
 
@@ -253,10 +253,15 @@ final class FileBrowserViewModel {
 
     func validateQwenModelAgain() {
         guard let url = resolvedQwenModelURL() else {
+            qwenValidationTask?.cancel()
+            qwenResponseTask?.cancel()
+            activeQwenModelURL = nil
+            isQwenResponding = false
+            Task { await qwenModelManager.clear() }
             qwenModelStatus = .notConfigured
             return
         }
-        guard startQwenModelSecurityScopedAccess(for: url) else {
+        guard settings.qwenModelPath == nil || startQwenModelSecurityScopedAccess(for: url) else {
             qwenModelStatus = .invalid(
                 url: url,
                 reason: "RawCullBrowse could not access the selected model folder.",
@@ -279,6 +284,7 @@ final class FileBrowserViewModel {
         isQwenResponding = false
         Task { await qwenModelManager.clear() }
         persistSettings()
+        activateSavedQwenModel()
     }
 
     func askQwen() {
@@ -417,6 +423,19 @@ final class FileBrowserViewModel {
         clipModelDownloadStates = snapshot.states
         activateSelectedCLIPModel()
         activateSelectedSAM3Model()
+        activateSavedQwenModel()
+    }
+
+    func acceptModelLicence(_ id: CLIPModelDownloadID) async {
+        do {
+            try await clipModelDownloadCoordinator.acceptLicence(
+                for: id,
+                rawCullBrowseVersion: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown"
+            )
+            await refreshCLIPModels()
+        } catch {
+            clipModelDownloadStates[id] = .failed(message: error.localizedDescription)
+        }
     }
 
     func startCLIPModelDownload(_ id: CLIPModelDownloadID) {
@@ -1291,10 +1310,15 @@ final class FileBrowserViewModel {
 
     private func activateSavedQwenModel() {
         guard let url = resolvedQwenModelURL() else {
+            qwenValidationTask?.cancel()
+            qwenResponseTask?.cancel()
+            activeQwenModelURL = nil
+            isQwenResponding = false
+            Task { await qwenModelManager.clear() }
             qwenModelStatus = .notConfigured
             return
         }
-        guard startQwenModelSecurityScopedAccess(for: url) else {
+        guard settings.qwenModelPath == nil || startQwenModelSecurityScopedAccess(for: url) else {
             qwenModelStatus = .invalid(
                 url: url,
                 reason: "RawCullBrowse could not access the saved model folder.",
@@ -1316,7 +1340,7 @@ final class FileBrowserViewModel {
                 return url.standardizedFileURL
             }
         }
-        return settings.qwenModelPath.map { URL(filePath: $0) }
+        return settings.qwenModelPath.map { URL(filePath: $0) } ?? managedCLIPModelLocations[.qwen3VL2B]
     }
 
     private func startQwenModelSecurityScopedAccess(for url: URL) -> Bool {
@@ -1462,7 +1486,7 @@ final class FileBrowserViewModel {
         let selectedURL: URL?
         if let customURL = resolvedSAM3ModelURL() {
             guard startSAM3ModelSecurityScopedAccess(for: customURL) else {
-                let invalidStatus = RawCullAICapabilityStatus.invalid(
+                let invalidStatus = RawCullBrowseAICapabilityStatus.invalid(
                     location: customURL,
                     reason: "RawCullBrowse could not access the selected SAM 3 model folder.",
                 )

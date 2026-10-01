@@ -179,7 +179,7 @@ final class DeepAIReviewFeature {
     var preset: DeepAIReviewPreset = .auto
     var scope: DeepAIReviewScope = .automatic
     private(set) var state: DeepAIReviewState = .idle
-    private(set) var availability: RawCullAICapabilityStatus
+    private(set) var availability: RawCullBrowseAICapabilityStatus
     private(set) var results: [BurstGroupSignature: DeepAIReviewResult] = [:]
     private(set) var maskCandidatesByFileID: [UUID: DeepAIReviewCandidate] = [:]
 
@@ -189,7 +189,7 @@ final class DeepAIReviewFeature {
     @ObservationIgnored private var generation = 0
 
     init(
-        availability: RawCullAICapabilityStatus = .unavailable(
+        availability: RawCullBrowseAICapabilityStatus = .unavailable(
             reason: "A segmentation model has not been configured for in-process review.",
         ),
         service: (any DeepAIReviewServicing)? = nil,
@@ -215,7 +215,7 @@ final class DeepAIReviewFeature {
     func install(
         service: (any DeepAIReviewServicing)?,
         maskLoader: (any DeepAIReviewMaskLoading)?,
-        availability: RawCullAICapabilityStatus,
+        availability: RawCullBrowseAICapabilityStatus,
     ) {
         self.service = service
         self.maskLoader = maskLoader
@@ -268,7 +268,7 @@ final class DeepAIReviewFeature {
         let runGeneration = generation
         state = .preparing(
             groupID: request.groupID,
-            totalCount: RawCullDeepAIReviewPipeline.selectedCandidateCount(
+            totalCount: RawCullBrowseDeepAIReviewPipeline.selectedCandidateCount(
                 from: request.candidates.count,
                 scope: request.scope,
             ),
@@ -368,7 +368,7 @@ final class DeepAIReviewFeature {
     }
 
     private nonisolated static func unavailableReason(
-        for status: RawCullAICapabilityStatus,
+        for status: RawCullBrowseAICapabilityStatus,
     ) -> String {
         switch status {
         case .checking:
@@ -421,7 +421,7 @@ nonisolated struct RawCullBrowseDeepReviewImageDecoder: DeepAIReviewImageDecodin
     }
 }
 
-nonisolated struct RawCullDeepAIReviewPipeline: DeepAIReviewServicing, Sendable {
+nonisolated struct RawCullBrowseDeepAIReviewPipeline: DeepAIReviewServicing, Sendable {
     private let selector: SubjectMaskSelector
     private let decoder: any DeepAIReviewImageDecoding
     private let focusScorer: any SubjectMaskFocusScoring

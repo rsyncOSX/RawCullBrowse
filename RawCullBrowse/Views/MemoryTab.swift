@@ -1,6 +1,6 @@
 //
 //  MemoryTab.swift
-//  RawCull
+//  RawCullBrowse
 //
 //  Created by Thomas Evensen on 12/02/2026.
 //
@@ -159,7 +159,7 @@ struct MemoryTab: View {
                             .font(.system(size: 12, weight: .semibold))
                         Text("• Total Unified Memory: Total physical memory available\n" +
                             "• Total Used Memory: All processes combined\n" +
-                            "• App Memory: RawCull process only\n" +
+                            "• App Memory: RawCullBrowse process only\n" +
                             "• Pressure: macOS threshold where memory warnings occur\n" +
                             "• System Memory Pressure: Kernel-reported level (Normal / Warning / Critical)")
                             .font(.system(size: 10, weight: .regular))

@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  RawCull
+//  RawCullBrowse
 //
 //  Created by Thomas Evensen on 05/02/2026.
 //
@@ -19,6 +19,10 @@ struct SettingsView: View {
             }
 
             Tab("AI Models", systemImage: "sparkle.magnifyingglass") {
+                AISettingsTab()
+            }
+
+            Tab("Manual AI", systemImage: "folder.badge.gearshape") {
                 CLIPSettingsTab()
             }
 

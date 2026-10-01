@@ -170,3 +170,8 @@ open-debug:
 	echo "Debug build complete - app is at: $(APP_PATH)"
 
 .PHONY: build debug test-smoke test-full archive archive-debug sign-app notarize staple prepare-dmg hash-dmg verify-downloaded-dmg clean check history check-cert open open-debug
+
+# Apple-hosted App Store distribution
+archive-app-store:
+	xcodebuild $(XCODE_RELEASE_FLAGS) archive -archivePath $(BUILD_PATH)/$(APP)-AppStore.xcarchive
+	xcodebuild -exportArchive -exportOptionsPlist exportOptionsAppStore.plist -archivePath $(BUILD_PATH)/$(APP)-AppStore.xcarchive -exportPath $(BUILD_PATH)/AppStore -allowProvisioningUpdates

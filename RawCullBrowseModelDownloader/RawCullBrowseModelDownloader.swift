@@ -1,7 +1,6 @@
-import BackgroundAssets
 import ExtensionFoundation
+import StoreKit
 
-/// Self-hosted Managed Background Assets entry point. The system framework
-/// schedules, downloads, verifies, and installs the model asset packs.
+/// Apple-hosted Managed Background Assets for App Store and TestFlight distribution.
 @main
-struct RawCullBrowseModelDownloader: ManagedDownloaderExtension {}
+struct RawCullBrowseModelDownloader: StoreDownloaderExtension {}

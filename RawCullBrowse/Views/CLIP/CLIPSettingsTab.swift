@@ -2,41 +2,12 @@ import SwiftUI
 
 struct CLIPSettingsTab: View {
     @Environment(FileBrowserViewModel.self) private var viewModel
-    @State private var showModelDownloads = false
     @State private var showCLIPModelPicker = false
     @State private var showSAM3ModelPicker = false
     @State private var showQwenModelPicker = false
 
     var body: some View {
         Form {
-            Section("AI Models") {
-                ForEach(CLIPModelDownloadCatalog.production.models) { descriptor in
-                    AIModelStatusRow(
-                        name: descriptor.displayName,
-                        state: viewModel.clipModelDownloadStates[descriptor.id] ?? .checking,
-                    )
-                }
-
-                HStack {
-                    Button("Download AI Models", systemImage: "arrow.down.circle") {
-                        showModelDownloads = true
-                    }
-
-                    Button("Check Again", systemImage: "arrow.clockwise") {
-                        Task { await viewModel.refreshCLIPModels() }
-                    }
-
-                    Spacer()
-                }
-
-                Text("""
-                Downloaded models are used automatically. Selecting a model folder below overrides \
-                the downloaded model until the selection is cleared.
-                """)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
             Section("CLIP") {
                 CLIPModelStatusRow(status: viewModel.clipModelStatus)
 
@@ -102,16 +73,13 @@ struct CLIPSettingsTab: View {
 
                 Text("""
                 Select a local Qwen vision-language Core AI bundle, such as Qwen3-VL-2B-Instruct. \
-                RawCullBrowse validates the bundle but does not download or copy it.
+                The selected folder overrides the Apple-hosted Qwen model until cleared.
                 """)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .sheet(isPresented: $showModelDownloads) {
-            CLIPModelDownloadsView(viewModel: viewModel)
-        }
         .fileImporter(
             isPresented: $showCLIPModelPicker,
             allowedContentTypes: [.folder],
@@ -225,7 +193,7 @@ private struct CLIPModelStatusRow: View {
 }
 
 private struct SAM3ModelStatusRow: View {
-    let status: RawCullAICapabilityStatus
+    let status: RawCullBrowseAICapabilityStatus
 
     var body: some View {
         LabeledContent("SAM 3 model") {
@@ -293,7 +261,7 @@ private struct QwenModelStatusRow: View {
     }
 }
 
-private struct AIModelStatusRow: View {
+struct AIModelStatusRow: View {
     let name: String
     let state: CLIPModelDownloadState
 

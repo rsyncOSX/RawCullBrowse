@@ -16,7 +16,7 @@ struct DeepAIReviewEnhancementTests {
     func scopeSelection(scope: DeepAIReviewScope, expectedRanks: [Int]) {
         let candidates = (1 ... 15).map { makeCandidate(rank: $0) }
 
-        let selected = RawCullDeepAIReviewPipeline.selectedCandidates(
+        let selected = RawCullBrowseDeepAIReviewPipeline.selectedCandidates(
             from: candidates,
             scope: scope,
         )
@@ -34,7 +34,7 @@ struct DeepAIReviewEnhancementTests {
         ],
     )
     func subjectPrompt(label: String, expectedPrompt: SubjectSegmentationPrompt) {
-        let prompts = RawCullDeepAIReviewPipeline.promptAttempts(
+        let prompts = RawCullBrowseDeepAIReviewPipeline.promptAttempts(
             preset: .auto,
             subjectLabel: label,
         )

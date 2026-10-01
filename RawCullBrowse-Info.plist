@@ -6,26 +6,8 @@
 	<string>group.no.blogspot.RawCullBrowse.model-assets</string>
 	<key>BAHasManagedAssetPacks</key>
 	<true/>
-	<key>BAEssentialMaxInstallSize</key>
-	<integer>0</integer>
-	<key>BAMaxInstallSize</key>
-	<integer>0</integer>
-	<key>BAInitialDownloadRestrictions</key>
-	<dict>
-		<key>BADownloadAllowance</key>
-		<integer>0</integer>
-		<key>BADownloadDomainAllowList</key>
-		<array>
-			<string>github.com</string>
-			<string>*.githubusercontent.com</string>
-		</array>
-		<key>BAEssentialDownloadAllowance</key>
-		<integer>0</integer>
-	</dict>
-	<key>BAManifestURL</key>
-	<string>https://github.com/rsyncOSX/RawCull-AI-Models/releases/download/v3/manifest.json</string>
 	<key>BAUsesAppleHosting</key>
-	<false/>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

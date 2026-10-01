@@ -115,7 +115,7 @@ final class DeepAIReviewController {
     func install(
         service: (any DeepAIReviewServicing)?,
         maskLoader: (any DeepAIReviewMaskLoading)?,
-        availability: RawCullAICapabilityStatus,
+        availability: RawCullBrowseAICapabilityStatus,
     ) {
         feature.install(
             service: service,

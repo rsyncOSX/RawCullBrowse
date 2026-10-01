@@ -11,7 +11,7 @@ struct CLIPModelDownloadsView: View {
                 Text("AI Model Downloads")
                     .font(.title2.weight(.semibold))
 
-                Text("RawCullBrowse uses on-demand Managed Background Assets. macOS stores and manages downloaded models, which run locally after installation. Their current access location can change between app launches.")
+                Text("RawCullBrowse uses Apple-hosted on-demand Background Assets. macOS stores and manages downloaded models, which run locally after installation. Their current access location can change between app launches.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -54,6 +54,7 @@ private struct CLIPModelDownloadRow: View {
     let state: CLIPModelDownloadState
     let viewModel: FileBrowserViewModel
     @State private var showRemoveConfirmation = false
+    @State private var showLicence = false
 
     var body: some View {
         GroupBox {
@@ -77,7 +78,7 @@ private struct CLIPModelDownloadRow: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
 
-                Text("Download size: \(ByteCountFormatter.string(fromByteCount: descriptor.downloadByteCount, countStyle: .file))")
+                Text("Download size: \(ByteCountFormatter.string(fromByteCount: descriptor.downloadByteCount ?? 0, countStyle: .file))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -112,6 +113,23 @@ private struct CLIPModelDownloadRow: View {
             }
             .padding(4)
         }
+        .sheet(isPresented: $showLicence) {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(descriptor.licence.name).font(.title2)
+                if let text = descriptor.licence.verifiedBundledText(in: .main) {
+                    ScrollView { Text(verbatim: text).textSelection(.enabled) }
+                    Button("Accept Licence") {
+                        Task { await viewModel.acceptModelLicence(descriptor.id) }
+                        showLicence = false
+                    }
+                } else {
+                    Text("The verified licence document is missing. Download is unavailable.")
+                }
+                Button("Close") { showLicence = false }
+            }
+            .padding(20)
+            .frame(width: 660, height: 600)
+        }
         .confirmationDialog(
             "Remove downloaded model?",
             isPresented: $showRemoveConfirmation,
@@ -144,7 +162,7 @@ private struct CLIPModelDownloadRow: View {
             ProgressView(state.activityTitle)
                 .controlSize(.small)
 
-        case .notConfigured, .ready, .installed, .failed:
+        case .unavailable, .licenceRequired, .notConfigured, .ready, .installed, .failed:
             EmptyView()
         }
     }
@@ -155,6 +173,12 @@ private struct CLIPModelDownloadRow: View {
         Link("Model Card", destination: descriptor.modelCardURL)
 
         switch state {
+        case .licenceRequired:
+            Button("Review and Accept Licence") { showLicence = true }
+
+        case .unavailable:
+            EmptyView()
+
         case .ready:
             Button("Download", systemImage: "arrow.down.circle") {
                 viewModel.startCLIPModelDownload(descriptor.id)
@@ -189,6 +213,8 @@ private struct CLIPModelDownloadRow: View {
 extension CLIPModelDownloadState {
     var title: LocalizedStringResource {
         switch self {
+        case .unavailable: "Unavailable"
+        case .licenceRequired: "Licence required"
         case .checking: "Checking"
         case .notConfigured: "Server pending"
         case .ready: "Ready"
@@ -205,12 +231,14 @@ extension CLIPModelDownloadState {
         case .checking: "Checking model service…"
         case .validating: "Validating model…"
         case .removing: "Removing model…"
-        case .notConfigured, .ready, .downloading, .installed, .failed: ""
+        case .unavailable, .licenceRequired, .notConfigured, .ready, .downloading, .installed, .failed: ""
         }
     }
 
     var iconName: String {
         switch self {
+        case .unavailable: "exclamationmark.triangle"
+        case .licenceRequired: "doc.text"
         case .checking: "arrow.triangle.2.circlepath"
         case .notConfigured: "network.slash"
         case .ready: "arrow.down.circle"
@@ -227,7 +255,7 @@ extension CLIPModelDownloadState {
         case .installed: .green
         case .ready, .downloading, .validating: .blue
         case .checking, .removing: .secondary
-        case .notConfigured: .orange
+        case .unavailable, .licenceRequired, .notConfigured: .orange
         case .failed: .red
         }
     }
