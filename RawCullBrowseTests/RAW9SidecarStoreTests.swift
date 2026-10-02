@@ -1,5 +1,6 @@
 import CoreImage
 import Foundation
+import ImageIO
 @testable import RawCullBrowse
 import Testing
 
@@ -27,6 +28,52 @@ struct RAW9SidecarStoreTests {
         #expect(try Data(contentsOf: raw) == original)
     }
 
+    @Test func `crop round trips with ratio and uses top left coordinates`() async throws {
+        let raw = try temporaryRAW()
+        defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
+        let crop = RAW9Crop(x: 0.1, y: 0.2, width: 0.5, height: 0.5, aspectRatio: 4.0 / 3)
+        let adjustments = RAW9Adjustments(crop: crop)
+        let store = RAW9SidecarStore()
+        try await store.save(adjustments, for: raw)
+        #expect(try await store.load(for: raw) == adjustments)
+        #expect(crop.rect(in: CGRect(x: 10, y: 20, width: 400, height: 300)) == CGRect(x: 50, y: 110, width: 200, height: 150))
+    }
+
+    @Test(arguments: [
+        RAW9Crop(x: -0.1), RAW9Crop(width: 0), RAW9Crop(x: 0.5, width: 0.6),
+        RAW9Crop(height: .infinity), RAW9Crop(aspectRatio: -1)
+    ])
+    func `rejects invalid crops`(crop: RAW9Crop) async throws {
+        let raw = try temporaryRAW()
+        defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
+        let store = RAW9SidecarStore()
+        await #expect(throws: (any Error).self) { try await store.save(RAW9Adjustments(crop: crop), for: raw) }
+    }
+
+    @Test(arguments: ["public.jpeg", "public.png", "public.tiff", "public.heic", "com.ilm.openexr-image", "heif10"])
+    func `exports readable full size images`(type: String) async throws {
+        let raw = try temporaryRAW()
+        defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
+        let destination = raw.deletingLastPathComponent().appendingPathComponent("export")
+        let input = CIImage(color: CIColor(red: 0.2, green: 0.5, blue: 0.8))
+            .cropped(to: CGRect(x: 0, y: 0, width: 32, height: 24))
+        let image = try #require(CIContext().createCGImage(input, from: input.extent))
+        let renderer = RAW9PreviewRenderer()
+        try await renderer.writeExport(image: image, destination: destination,
+                                       type: type == "heif10" ? "public.heic" : type, heif10: type == "heif10")
+        let source = try #require(CGImageSourceCreateWithURL(destination as CFURL, nil))
+        let exported = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        #expect(exported.width == 32)
+        #expect(exported.height == 24)
+        if type == "public.png" || type == "public.tiff" {
+            #expect(exported.bitsPerComponent == 16)
+        }
+        // Replacing an existing export also completes without leaving temporary files.
+        try await renderer.writeExport(image: image, destination: destination,
+                                       type: type == "heif10" ? "public.heic" : type, heif10: type == "heif10")
+        #expect(try FileManager.default.contentsOfDirectory(atPath: raw.deletingLastPathComponent().path) == ["export"])
+    }
+
     @Test func `picker maps displayed coordinates into unrotated RAW pixels`() {
         let extent = CGRect(x: 0, y: 0, width: 400, height: 300)
         let landscape = RAW9Support.neutralLocation(normalizedPoint: CGPoint(x: 0.25, y: 0.75), extent: extent, orientation: .up)
@@ -47,6 +94,7 @@ struct RAW9SidecarStoreTests {
         #expect(adjustments.exposure == 1)
         #expect(adjustments.temperature == nil)
         #expect(adjustments.tint == nil)
+        #expect(adjustments.crop == nil)
     }
 
     @Test(arguments: [

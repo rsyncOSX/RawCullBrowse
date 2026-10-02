@@ -1,5 +1,6 @@
 import CoreImage
 import Foundation
+import ImageIO
 import RawParserKit
 
 /// Checks the installed decoder's capabilities without rendering sensor data.
@@ -21,7 +22,7 @@ nonisolated enum RAW9Support {
         let displayedExtent = extent.applying(transform)
         let displayedPoint = CGPoint(
             x: displayedExtent.minX + normalizedPoint.x * max(0, displayedExtent.width - 1),
-            y: displayedExtent.minY + (1 - normalizedPoint.y) * max(0, displayedExtent.height - 1)
+            y: displayedExtent.minY + (1 - normalizedPoint.y) * max(0, displayedExtent.height - 1),
         )
         let point = displayedPoint.applying(transform.inverted())
         return CGPoint(x: min(extent.maxX - 1, max(extent.minX, point.x)),
@@ -46,6 +47,30 @@ nonisolated struct RAW9Adjustments: Equatable, Sendable, Codable {
     var contrast: Double = 0
     var temperature: Double?
     var tint: Double?
+    var crop: RAW9Crop?
+}
+
+/// Normalized coordinates in the oriented image, measured from the top left.
+nonisolated struct RAW9Crop: Codable, Equatable, Sendable {
+    var x: Double = 0
+    var y: Double = 0
+    var width: Double = 1
+    var height: Double = 1
+    var aspectRatio: Double?
+
+    var isValid: Bool {
+        [x, y, width, height].allSatisfy(\.isFinite)
+            && x >= 0 && y >= 0 && width > 0 && height > 0
+            && x + width <= 1.000001 && y + height <= 1.000001
+            && (aspectRatio.map { $0.isFinite && $0 > 0 } ?? true)
+    }
+
+    func rect(in extent: CGRect) -> CGRect {
+        CGRect(x: extent.minX + x * extent.width,
+               y: extent.minY + (1 - y - height) * extent.height,
+               width: width * extent.width, height: height * extent.height)
+            .integral.intersection(extent)
+    }
 }
 
 /// Keeps the filter and its intermediate render cache off the main actor.
@@ -69,7 +94,7 @@ actor RAW9PreviewRenderer {
             sample.orientation = .up
             guard let extent = sample.outputImage?.extent else { throw CocoaError(.fileReadUnknown) }
             sample.neutralLocation = RAW9Support.neutralLocation(
-                normalizedPoint: point, extent: extent, orientation: orientation
+                normalizedPoint: point, extent: extent, orientation: orientation,
             )
         }
         let temperature = Double(sample.neutralTemperature)
@@ -102,15 +127,58 @@ actor RAW9PreviewRenderer {
         filter.contrastAmount = min(1, max(0, defaults.contrast + Float(adjustments.contrast)))
         // Finish the expensive RAW render on this actor. A deferred CGImage can
         // perform that work when SwiftUI draws it, blocking the main thread.
-        guard let output = filter.outputImage,
-              let image = context.createCGImage(
-                  output, from: output.extent, format: bitDepth == .eightBit ? .RGBA8 : .RGBAh,
-                  colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
-                  deferred: false,
-              )
+        guard var output = filter.outputImage else { throw CocoaError(.fileReadUnknown) }
+        if let crop = adjustments.crop {
+            guard crop.isValid else { throw CocoaError(.fileReadCorruptFile) }
+            output = output.cropped(to: crop.rect(in: output.extent))
+        }
+        guard let image = context.createCGImage(
+            output, from: output.extent, format: bitDepth == .eightBit ? .RGBA8 : .RGBAh,
+            colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+            deferred: false,
+        )
         else { throw CocoaError(.fileReadUnknown) }
         try Task.checkCancellation()
         return image
+    }
+
+    /// ImageIO supplies the writable formats installed on this Mac.
+    nonisolated static var exportTypes: [String] {
+        (CGImageDestinationCopyTypeIdentifiers() as? [String] ?? []).sorted()
+    }
+
+    func export(url: URL, adjustments: RAW9Adjustments, destination: URL, type: String, heif10: Bool = false) throws {
+        let image = try render(url: url, adjustments: adjustments, bitDepth: .sixteenBit)
+        try writeExport(image: image, destination: destination, type: type, heif10: heif10)
+    }
+
+    func writeExport(image: CGImage, destination: URL, type: String, heif10: Bool = false) throws {
+        let ciImage = CIImage(cgImage: image)
+        let highDepth = type == "public.png" || type == "public.tiff"
+        guard let encodedImage = context.createCGImage(ciImage, from: ciImage.extent,
+                                                       format: highDepth ? .RGBA16 : .RGBA8,
+                                                       colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!)
+        else { throw CocoaError(.fileWriteUnknown) }
+        // Encode beside the destination and replace only after successful finalization.
+        let temporary = destination.deletingLastPathComponent().appendingPathComponent(".rawcull-export-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: temporary) }
+        if type == "com.ilm.openexr-image" {
+            try context.writeOpenEXRRepresentation(of: ciImage, to: temporary, options: [:])
+        } else if heif10 {
+            try context.writeHEIF10Representation(of: ciImage, to: temporary,
+                                                  colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                                  options: [:])
+        } else {
+            guard let writer = CGImageDestinationCreateWithURL(temporary as CFURL, type as CFString, 1, nil)
+            else { throw CocoaError(.fileWriteUnknown) }
+            CGImageDestinationAddImage(writer, encodedImage, [kCGImageDestinationLossyCompressionQuality: 1.0] as CFDictionary)
+            guard CGImageDestinationFinalize(writer) else { throw CocoaError(.fileWriteUnknown) }
+        }
+        if FileManager.default.fileExists(atPath: destination.path) {
+            _ = try FileManager.default.replaceItemAt(destination, withItemAt: temporary)
+        } else {
+            try FileManager.default.moveItem(at: temporary, to: destination)
+        }
     }
 }
 
@@ -149,7 +217,8 @@ actor RAW9SidecarStore {
     }
 
     private nonisolated static func isValid(_ value: RAW9Adjustments) -> Bool {
-        (value.temperature.map { $0.isFinite && (2000 ... 50000).contains($0) } ?? true)
+        (value.crop.map(\.isValid) ?? true)
+            && (value.temperature.map { $0.isFinite && (2000 ... 50000).contains($0) } ?? true)
             && (value.tint.map { $0.isFinite && (-150 ... 150).contains($0) } ?? true)
             && value.exposure.isFinite && (-3 ... 3).contains(value.exposure)
             && value.noiseReduction.isFinite && (-1 ... 1).contains(value.noiseReduction)

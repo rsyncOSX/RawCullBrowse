@@ -1,5 +1,6 @@
 import RawParserKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct BrowserZoomOverlayView: View {
     @Bindable var viewModel: FileBrowserViewModel
@@ -18,6 +19,10 @@ struct BrowserZoomOverlayView: View {
         let isPresented: Bool
     }
 
+    @State private var cropSource: RAW9CropSource?
+    @State private var isPreparingCrop = false
+    @State private var isExportingRAW = false
+    @State private var rawExportError: String?
     @State private var isPickingWhiteBalance = false
     @State private var isSamplingWhiteBalance = false
     @State private var whiteBalanceTask: Task<Void, Never>?
@@ -64,7 +69,7 @@ struct BrowserZoomOverlayView: View {
                             .scaledToFit()
                             .frame(width: geometry.size.width, height: geometry.size.height)
 
-                        if showSubjectOutline, let subjectOutline {
+                        if showSubjectOutline, !viewModel.useDevelopedRAW || viewModel.raw9Adjustments.crop == nil, let subjectOutline {
                             Image(decorative: subjectOutline, scale: 1, orientation: .up)
                                 .resizable()
                                 .scaledToFit()
@@ -77,6 +82,7 @@ struct BrowserZoomOverlayView: View {
                         }
 
                         if viewModel.isZoomFocusPointVisible,
+                           !viewModel.useDevelopedRAW || viewModel.raw9Adjustments.crop == nil,
                            let focusPoint = viewModel.zoomExifInfo?.focusPoint {
                             FocusPointMarker(
                                 focusPoint: focusPoint,
@@ -303,7 +309,7 @@ struct BrowserZoomOverlayView: View {
         }
     }
 
-    private func centeredControlRow<Content: View>(height: CGFloat, @ViewBuilder content: @escaping () -> Content) -> some View {
+    private func centeredControlRow(height: CGFloat, @ViewBuilder content: @escaping () -> some View) -> some View {
         GeometryReader { geometry in
             ScrollView(.horizontal) {
                 content()
@@ -318,11 +324,11 @@ struct BrowserZoomOverlayView: View {
         HStack(spacing: 8) {
             adjustmentSlider("Temp K", value: Binding(
                 get: { viewModel.raw9Adjustments.temperature ?? cameraTemperature },
-                set: { viewModel.raw9Adjustments.temperature = $0 }
+                set: { viewModel.raw9Adjustments.temperature = $0 },
             ), range: 2000 ... 50000, fractionDigits: 0)
             adjustmentSlider("Tint", value: Binding(
                 get: { viewModel.raw9Adjustments.tint ?? cameraTint },
-                set: { viewModel.raw9Adjustments.tint = $0 }
+                set: { viewModel.raw9Adjustments.tint = $0 },
             ), range: -150 ... 150)
             Button {
                 isPickingWhiteBalance.toggle()
@@ -336,6 +342,34 @@ struct BrowserZoomOverlayView: View {
             adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1 ... 1)
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
             adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1 ... 1)
+            Button("Crop", systemImage: "crop") { prepareCrop() }
+                .disabled(isPreparingCrop || isExportingRAW)
+                .sheet(item: $cropSource) { source in
+                    RAW9CropEditor(source: source, viewModel: viewModel)
+                }
+            Menu {
+                ForEach(RAW9PreviewRenderer.exportTypes, id: \.self) { identifier in
+                    if let type = UTType(identifier) {
+                        Button(type.localizedDescription ?? identifier) { exportRAW(type: type) }
+                    }
+                }
+                Button("HEIF (10-bit)") { exportRAW(type: .heic, heif10: true) }
+                if !RAW9PreviewRenderer.exportTypes.contains("com.ilm.openexr-image") {
+                    Button("OpenEXR") {
+                        exportRAW(type: UTType(filenameExtension: "exr") ?? UTType(exportedAs: "com.ilm.openexr-image"))
+                    }
+                }
+            } label: {
+                Label(isExportingRAW ? "Exporting…" : "Export", systemImage: "square.and.arrow.up")
+            }
+            .disabled(isExportingRAW || isPreparingCrop)
+            .alert("RAW 9", isPresented: Binding(get: { rawExportError != nil }, set: {
+                if !$0 {
+                    rawExportError = nil
+                }
+            })) {
+                Button("OK") { rawExportError = nil }
+            } message: { Text(rawExportError ?? "") }
             if let error = viewModel.raw9SidecarError {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
@@ -348,7 +382,7 @@ struct BrowserZoomOverlayView: View {
                 isPickingWhiteBalance = false
                 viewModel.raw9Adjustments = RAW9Adjustments()
             }
-                .disabled(viewModel.raw9Adjustments == RAW9Adjustments())
+            .disabled(viewModel.raw9Adjustments == RAW9Adjustments())
         }
         .controlSize(.mini)
         .font(.caption2)
@@ -358,6 +392,46 @@ struct BrowserZoomOverlayView: View {
         .padding(.vertical, 6)
         .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
         .help("RAW 9 adjustments are saved automatically to a sidecar beside the original. Noise, sharpness and contrast are offsets from camera defaults.")
+    }
+
+    private func prepareCrop() {
+        guard let url = viewModel.selectedFile?.url else { return }
+        isPickingWhiteBalance = false
+        var adjustments = viewModel.raw9Adjustments
+        adjustments.crop = nil
+        isPreparingCrop = true
+        Task {
+            defer { isPreparingCrop = false }
+            do {
+                let image = try await RAW9PreviewRenderer().render(url: url, adjustments: adjustments)
+                guard viewModel.selectedFile?.url == url else { return }
+                cropSource = RAW9CropSource(url: url, image: image, crop: viewModel.raw9Adjustments.crop)
+            } catch { rawExportError = error.localizedDescription }
+        }
+    }
+
+    private func exportRAW(type: UTType, heif10: Bool = false) {
+        guard let url = viewModel.selectedFile?.url else { return }
+        let adjustments = viewModel.raw9Adjustments
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [type]
+        panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + "-edited." + (type.preferredFilenameExtension ?? "img")
+        panel.begin { response in
+            guard response == .OK, let destination = panel.url else { return }
+            guard destination.resolvingSymlinksInPath() != url.resolvingSymlinksInPath(),
+                  destination.resolvingSymlinksInPath() != RAW9SidecarStore.sidecarURL(for: url).resolvingSymlinksInPath()
+            else {
+                rawExportError = "Choose a destination other than the original RAW or its sidecar."
+                return
+            }
+            isExportingRAW = true
+            Task {
+                defer { isExportingRAW = false }
+                do {
+                    try await RAW9PreviewRenderer().export(url: url, adjustments: adjustments, destination: destination, type: type.identifier, heif10: heif10)
+                } catch { rawExportError = "Could not export: \(error.localizedDescription)" }
+            }
+        }
     }
 
     private func adjustmentSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, fractionDigits: Int = 1) -> some View {
@@ -462,8 +536,11 @@ struct BrowserZoomOverlayView: View {
         let scale = min(containerSize.width / CGFloat(image.width), containerSize.height / CGFloat(image.height))
         let size = CGSize(width: CGFloat(image.width) * scale, height: CGFloat(image.height) * scale)
         let origin = CGPoint(x: (containerSize.width - size.width) / 2, y: (containerSize.height - size.height) / 2)
-        let point = CGPoint(x: (location.x - origin.x) / size.width, y: (location.y - origin.y) / size.height)
+        var point = CGPoint(x: (location.x - origin.x) / size.width, y: (location.y - origin.y) / size.height)
         guard (0 ... 1).contains(point.x), (0 ... 1).contains(point.y) else { return }
+        if let crop = viewModel.raw9Adjustments.crop {
+            point = CGPoint(x: crop.x + point.x * crop.width, y: crop.y + point.y * crop.height)
+        }
         isPickingWhiteBalance = false
         isSamplingWhiteBalance = true
         let originalAdjustments = viewModel.raw9Adjustments
@@ -596,7 +673,8 @@ struct BrowserZoomOverlayView: View {
     }
 
     private func handleKeyAction(_ action: ZoomOverlayKeyAction?) -> KeyPress.Result {
-        guard let action else { return .ignored }
+        guard cropSource == nil, !isPreparingCrop, NSApp.keyWindow?.attachedSheet == nil,
+              let action else { return .ignored }
 
         switch action {
         case .navigatePrevious:
