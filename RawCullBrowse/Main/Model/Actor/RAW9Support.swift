@@ -14,6 +14,20 @@ nonisolated enum RAW9Support {
         return nil
     }
 
+    /// Map a displayed top-left point into the RAW filter's unrotated coordinates.
+    static func neutralLocation(normalizedPoint: CGPoint, extent: CGRect, orientation: CGImagePropertyOrientation) -> CGPoint {
+        let image = CIImage.empty().cropped(to: extent)
+        let transform = image.orientationTransform(forExifOrientation: Int32(orientation.rawValue))
+        let displayedExtent = extent.applying(transform)
+        let displayedPoint = CGPoint(
+            x: displayedExtent.minX + normalizedPoint.x * max(0, displayedExtent.width - 1),
+            y: displayedExtent.minY + (1 - normalizedPoint.y) * max(0, displayedExtent.height - 1)
+        )
+        let point = displayedPoint.applying(transform.inverted())
+        return CGPoint(x: min(extent.maxX - 1, max(extent.minX, point.x)),
+                       y: min(extent.maxY - 1, max(extent.minY, point.y)))
+    }
+
     @concurrent
     static func isSupported(for url: URL) async -> Bool {
         guard !Task.isCancelled, !SupportedFileType.isRenderedImage(url) else { return false }
@@ -24,12 +38,14 @@ nonisolated enum RAW9Support {
     }
 }
 
-/// Preview-only adjustments; zero preserves the camera's calibrated defaults.
+/// Preview-only adjustments; zero offsets and nil white balance preserve camera defaults.
 nonisolated struct RAW9Adjustments: Equatable, Sendable, Codable {
     var exposure: Double = 0
     var noiseReduction: Double = 0
     var sharpness: Double = 0
     var contrast: Double = 0
+    var temperature: Double?
+    var tint: Double?
 }
 
 /// Keeps the filter and its intermediate render cache off the main actor.
@@ -37,7 +53,30 @@ actor RAW9PreviewRenderer {
     private var sourceURL: URL?
     private var filter: CIRAWFilter?
     private lazy var context = CIContext(options: [.cacheIntermediates: true])
+    private var defaultTemperature: Float = 6500
+    private var defaultTint: Float = 0
     private var defaults: (noise: Float, sharpness: Float, contrast: Float) = (0, 0, 0)
+
+    /// Uses a separate filter so sampling cannot change the preview's cached defaults.
+    func whiteBalance(url: URL, normalizedPoint: CGPoint? = nil) throws -> (temperature: Double, tint: Double) {
+        try Task.checkCancellation()
+        guard let sample = CIRAWFilter(imageURL: url),
+              let version = RAW9Support.preferredVersion(in: sample.supportedDecoderVersions)
+        else { throw CocoaError(.fileReadUnsupportedScheme) }
+        sample.decoderVersion = version
+        if let point = normalizedPoint {
+            let orientation = sample.orientation
+            sample.orientation = .up
+            guard let extent = sample.outputImage?.extent else { throw CocoaError(.fileReadUnknown) }
+            sample.neutralLocation = RAW9Support.neutralLocation(
+                normalizedPoint: point, extent: extent, orientation: orientation
+            )
+        }
+        let temperature = Double(sample.neutralTemperature)
+        let tint = Double(sample.neutralTint)
+        guard temperature.isFinite, tint.isFinite else { throw CocoaError(.fileReadCorruptFile) }
+        return (min(50000, max(2000, temperature)), min(150, max(-150, tint)))
+    }
 
     func render(url: URL, adjustments: RAW9Adjustments, bitDepth: RAWPreviewBitDepth = .eightBit) throws -> CGImage {
         try Task.checkCancellation()
@@ -49,10 +88,14 @@ actor RAW9PreviewRenderer {
             else { throw CocoaError(.fileReadUnsupportedScheme) }
             loaded.decoderVersion = version
             defaults = (loaded.luminanceNoiseReductionAmount, loaded.sharpnessAmount, loaded.contrastAmount)
+            defaultTemperature = loaded.neutralTemperature
+            defaultTint = loaded.neutralTint
             filter = loaded
             sourceURL = url
         }
         guard let filter else { throw CocoaError(.fileReadUnknown) }
+        filter.neutralTemperature = adjustments.temperature.map(Float.init) ?? defaultTemperature
+        filter.neutralTint = adjustments.tint.map(Float.init) ?? defaultTint
         filter.exposure = Float(adjustments.exposure)
         filter.luminanceNoiseReductionAmount = min(1, max(0, defaults.noise + Float(adjustments.noiseReduction)))
         filter.sharpnessAmount = min(1, max(0, defaults.sharpness + Float(adjustments.sharpness)))
@@ -106,7 +149,9 @@ actor RAW9SidecarStore {
     }
 
     private nonisolated static func isValid(_ value: RAW9Adjustments) -> Bool {
-        value.exposure.isFinite && (-3 ... 3).contains(value.exposure)
+        (value.temperature.map { $0.isFinite && (2000 ... 50000).contains($0) } ?? true)
+            && (value.tint.map { $0.isFinite && (-150 ... 150).contains($0) } ?? true)
+            && value.exposure.isFinite && (-3 ... 3).contains(value.exposure)
             && value.noiseReduction.isFinite && (-1 ... 1).contains(value.noiseReduction)
             && value.sharpness.isFinite && (-1 ... 1).contains(value.sharpness)
             && value.contrast.isFinite && (-1 ... 1).contains(value.contrast)

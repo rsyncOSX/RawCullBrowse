@@ -1292,6 +1292,11 @@ final class FileBrowserViewModel {
         }
     }
 
+    func raw9WhiteBalance(normalizedPoint: CGPoint? = nil) async throws -> (temperature: Double, tint: Double) {
+        guard let url = selectedFile?.url else { throw CocoaError(.fileReadUnknown) }
+        return try await raw9Renderer.whiteBalance(url: url, normalizedPoint: normalizedPoint)
+    }
+
     /// Refresh only the rendered pixels; retain metadata and viewport state.
     func refreshRAW9Preview() {
         guard zoomOverlayVisible, useDevelopedRAW,

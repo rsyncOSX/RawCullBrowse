@@ -18,6 +18,11 @@ struct BrowserZoomOverlayView: View {
         let isPresented: Bool
     }
 
+    @State private var isPickingWhiteBalance = false
+    @State private var isSamplingWhiteBalance = false
+    @State private var whiteBalanceTask: Task<Void, Never>?
+    @State private var cameraTemperature: Double = 6500
+    @State private var cameraTint: Double = 0
     @State private var raw9SupportedURL: URL?
     @State private var isEditingRAWAdjustment = false
     @State private var adjustmentRefreshTask: Task<Void, Never>?
@@ -84,6 +89,10 @@ struct BrowserZoomOverlayView: View {
                     .scaleEffect(viewModel.zoomScale)
                     .offset(viewModel.zoomOffset)
                     .gesture(zoomPanGesture)
+                    .simultaneousGesture(SpatialTapGesture().onEnded { tap in
+                        guard isPickingWhiteBalance else { return }
+                        pickWhiteBalance(at: tap.location, image: image, containerSize: geometry.size)
+                    })
                     .onAppear {
                         viewportSize = geometry.size
                         applyPendingInitialZoomIfNeeded(
@@ -111,6 +120,7 @@ struct BrowserZoomOverlayView: View {
                         )
                     }
                     .onTapGesture(count: 2) {
+                        guard !isPickingWhiteBalance else { return }
                         withAnimation(.spring()) {
                             viewModel.zoomScale > 1.0 ? resetToFit() : zoomToTwoX()
                         }
@@ -174,6 +184,12 @@ struct BrowserZoomOverlayView: View {
                 Spacer()
 
                 VStack(spacing: 8) {
+                    if isPickingWhiteBalance {
+                        Text("Click a neutral white or gray area in the photo. Escape cancels.")
+                            .font(.callout)
+                            .padding(8)
+                            .background(.black.opacity(0.75), in: RoundedRectangle(cornerRadius: 8))
+                    }
                     if viewModel.useDevelopedRAW,
                        raw9SupportedURL != nil,
                        raw9SupportedURL == viewModel.selectedFile?.url {
@@ -246,16 +262,25 @@ struct BrowserZoomOverlayView: View {
         }
         .onDisappear {
             adjustmentRefreshTask?.cancel()
+            whiteBalanceTask?.cancel()
             removeKeyMonitor()
             subjectOutline = nil
             isLoadingSubjectOutline = false
         }
         .task(id: viewModel.selectedFile?.url) {
             adjustmentRefreshTask?.cancel()
+            whiteBalanceTask?.cancel()
+            isPickingWhiteBalance = false
+            isSamplingWhiteBalance = false
             raw9SupportedURL = nil
             guard let url = viewModel.selectedFile?.url else { return }
             let supported = await RAW9Support.isSupported(for: url)
             guard !Task.isCancelled else { return }
+            if supported, let balance = try? await viewModel.raw9WhiteBalance() {
+                guard !Task.isCancelled, viewModel.selectedFile?.url == url else { return }
+                cameraTemperature = balance.temperature
+                cameraTint = balance.tint
+            }
             raw9SupportedURL = supported ? url : nil
         }
         .onChange(of: viewModel.raw9Adjustments) {
@@ -291,6 +316,22 @@ struct BrowserZoomOverlayView: View {
 
     private var rawAdjustmentControls: some View {
         HStack(spacing: 8) {
+            adjustmentSlider("Temp K", value: Binding(
+                get: { viewModel.raw9Adjustments.temperature ?? cameraTemperature },
+                set: { viewModel.raw9Adjustments.temperature = $0 }
+            ), range: 2000 ... 50000, fractionDigits: 0)
+            adjustmentSlider("Tint", value: Binding(
+                get: { viewModel.raw9Adjustments.tint ?? cameraTint },
+                set: { viewModel.raw9Adjustments.tint = $0 }
+            ), range: -150 ... 150)
+            Button {
+                isPickingWhiteBalance.toggle()
+            } label: {
+                Label(isPickingWhiteBalance ? "Cancel picker" : "White balance", systemImage: "eyedropper")
+            }
+            .foregroundStyle(isPickingWhiteBalance ? .yellow : .secondary)
+            .disabled(isSamplingWhiteBalance || viewModel.zoomImage == nil)
+            .help("Click a neutral white or gray area to set white balance")
             adjustmentSlider("Exposure", value: $viewModel.raw9Adjustments.exposure, range: -3 ... 3)
             adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1 ... 1)
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
@@ -301,7 +342,12 @@ struct BrowserZoomOverlayView: View {
                     .help(error)
                     .accessibilityLabel(error)
             }
-            Button("Reset") { viewModel.raw9Adjustments = RAW9Adjustments() }
+            Button("Reset") {
+                whiteBalanceTask?.cancel()
+                isSamplingWhiteBalance = false
+                isPickingWhiteBalance = false
+                viewModel.raw9Adjustments = RAW9Adjustments()
+            }
                 .disabled(viewModel.raw9Adjustments == RAW9Adjustments())
         }
         .controlSize(.mini)
@@ -314,11 +360,11 @@ struct BrowserZoomOverlayView: View {
         .help("RAW 9 adjustments are saved automatically to a sidecar beside the original. Noise, sharpness and contrast are offsets from camera defaults.")
     }
 
-    private func adjustmentSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
+    private func adjustmentSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>, fractionDigits: Int = 1) -> some View {
         VStack(spacing: 2) {
             HStack(spacing: 4) {
                 Text(title)
-                Text(value.wrappedValue, format: .number.precision(.fractionLength(1)))
+                Text(value.wrappedValue, format: .number.precision(.fractionLength(fractionDigits)))
                     .monospacedDigit()
             }
             .font(.caption2)
@@ -345,6 +391,9 @@ struct BrowserZoomOverlayView: View {
             .disabled(viewModel.selectedFile.map { SupportedFileType.isRenderedImage($0.url) } ?? true)
             .help("Show the embedded JPEG or develop the full-size RAW image. RAW 9 is preferred when supported.")
             .onChange(of: viewModel.useDevelopedRAW) {
+                whiteBalanceTask?.cancel()
+                isPickingWhiteBalance = false
+                isSamplingWhiteBalance = false
                 viewModel.openZoom()
             }
             Button { decreaseZoom() } label: {
@@ -403,6 +452,35 @@ struct BrowserZoomOverlayView: View {
             .disabled(subjectOutlineCandidate == nil)
             .accessibilityLabel("Subject Outline")
             .help(subjectOutlineCandidate == nil ? "Run Deep Review for this image first" : "Show Deep Review subject outline (S)")
+        }
+    }
+
+    private func pickWhiteBalance(at location: CGPoint, image: CGImage, containerSize: CGSize) {
+        guard !isSamplingWhiteBalance, let url = viewModel.selectedFile?.url,
+              viewModel.useDevelopedRAW, raw9SupportedURL == url else { return }
+        // The tap is in the image container's local coordinates, before zoom and pan.
+        let scale = min(containerSize.width / CGFloat(image.width), containerSize.height / CGFloat(image.height))
+        let size = CGSize(width: CGFloat(image.width) * scale, height: CGFloat(image.height) * scale)
+        let origin = CGPoint(x: (containerSize.width - size.width) / 2, y: (containerSize.height - size.height) / 2)
+        let point = CGPoint(x: (location.x - origin.x) / size.width, y: (location.y - origin.y) / size.height)
+        guard (0 ... 1).contains(point.x), (0 ... 1).contains(point.y) else { return }
+        isPickingWhiteBalance = false
+        isSamplingWhiteBalance = true
+        let originalAdjustments = viewModel.raw9Adjustments
+        whiteBalanceTask = Task {
+            defer { isSamplingWhiteBalance = false }
+            do {
+                let balance = try await viewModel.raw9WhiteBalance(normalizedPoint: point)
+                guard !Task.isCancelled, viewModel.selectedFile?.url == url,
+                      viewModel.useDevelopedRAW, viewModel.raw9Adjustments == originalAdjustments else { return }
+                var adjustments = originalAdjustments
+                adjustments.temperature = balance.temperature
+                adjustments.tint = balance.tint
+                viewModel.raw9Adjustments = adjustments
+            } catch {
+                guard !Task.isCancelled, viewModel.selectedFile?.url == url else { return }
+                viewModel.raw9SidecarError = "Could not sample white balance: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -557,6 +635,10 @@ struct BrowserZoomOverlayView: View {
     }
 
     private func dismiss() {
+        if isPickingWhiteBalance {
+            isPickingWhiteBalance = false
+            return
+        }
         viewModel.closeZoom()
         resetToFit()
         subjectOutline = nil
