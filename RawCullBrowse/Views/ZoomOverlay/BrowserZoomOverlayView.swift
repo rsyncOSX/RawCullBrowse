@@ -275,7 +275,7 @@ struct BrowserZoomOverlayView: View {
     }
 
     private var rawAdjustmentControls: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             adjustmentSlider("Exposure", value: $viewModel.raw9Adjustments.exposure, range: -3 ... 3)
             adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1 ... 1)
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
@@ -289,19 +289,24 @@ struct BrowserZoomOverlayView: View {
             Button("Reset") { viewModel.raw9Adjustments = RAW9Adjustments() }
                 .disabled(viewModel.raw9Adjustments == RAW9Adjustments())
         }
-        .padding(10)
-        .background(.black.opacity(0.65), in: RoundedRectangle(cornerRadius: 10))
+        .controlSize(.mini)
+        .font(.caption2)
+        .foregroundStyle(.secondary)
+        .tint(.white.opacity(0.65))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
         .help("RAW 9 adjustments are saved automatically to a sidecar beside the original. Noise, sharpness and contrast are offsets from camera defaults.")
     }
 
     private func adjustmentSlider(_ title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
-        VStack(spacing: 3) {
-            HStack {
+        VStack(spacing: 2) {
+            HStack(spacing: 4) {
                 Text(title)
                 Text(value.wrappedValue, format: .number.precision(.fractionLength(1)))
                     .monospacedDigit()
             }
-            .font(.caption)
+            .font(.caption2)
             Slider(value: value, in: range) { editing in
                 isEditingRAWAdjustment = editing
                 adjustmentRefreshTask?.cancel()
@@ -311,12 +316,14 @@ struct BrowserZoomOverlayView: View {
             }
             .accessibilityLabel(title)
         }
-        .frame(width: 90)
+        .frame(width: 78)
     }
 
     private var zoomControlRow: some View {
         HStack(spacing: 12) {
-            if raw9SupportedURL != nil, raw9SupportedURL == viewModel.selectedFile?.url {
+            if viewModel.useDevelopedRAW,
+               raw9SupportedURL != nil,
+               raw9SupportedURL == viewModel.selectedFile?.url {
                 rawAdjustmentControls
             }
             Picker("", selection: $viewModel.useDevelopedRAW) {
