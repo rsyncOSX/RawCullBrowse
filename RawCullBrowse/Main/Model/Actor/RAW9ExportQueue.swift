@@ -8,6 +8,7 @@ nonisolated struct RAW9ExportJob: Sendable {
     let destination: URL
     let type: String
     var heif10: Bool = false
+    var sourceAccessURL: URL? = nil
 }
 
 /// App-owned FIFO. Only queue bookkeeping runs on the main actor; the renderer
@@ -23,14 +24,22 @@ final class RAW9ExportQueue {
         waitingCount + (activeJob == nil ? 0 : 1)
     }
 
-    @ObservationIgnored private var jobs: [RAW9ExportJob] = []
+    @ObservationIgnored private var jobs: [(job: RAW9ExportJob, scopedURLs: [URL])] = []
+    @ObservationIgnored private let startAccess: (URL) -> Bool
+    @ObservationIgnored private let stopAccess: (URL) -> Void
     @ObservationIgnored private var worker: Task<Void, Never>?
     @ObservationIgnored private let operation: @Sendable (RAW9ExportJob) async throws -> Void
 
-    init(operation: @escaping @Sendable (RAW9ExportJob) async throws -> Void = { job in
-        try await performExport(job)
-    }) {
+    init(
+        operation: @escaping @Sendable (RAW9ExportJob) async throws -> Void = { job in
+            try await performExport(job)
+        },
+        startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
+        stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() }
+    ) {
         self.operation = operation
+        self.startAccess = startAccess
+        self.stopAccess = stopAccess
     }
 
     /// Explicitly leave the main actor even if Swift optimizes access to a newly
@@ -44,14 +53,21 @@ final class RAW9ExportQueue {
     }
 
     func enqueue(_ job: RAW9ExportJob) {
-        jobs.append(job)
+        // Acquire while the caller's catalog grant is still active, including
+        // time spent waiting in the FIFO. Keep the original scoped URLs.
+        let scopedURLs = [job.sourceAccessURL ?? job.source, job.destination].filter { startAccess($0) }
+        // A false return can mean a URL already accessible through the sandbox
+        // or save panel; only successful starts require a matching stop.
+        jobs.append((job, scopedURLs))
         waitingCount = jobs.count
         guard worker == nil else { return }
         // This unstructured worker belongs to the queue, never to a view's .task.
         // Retain the queue until all accepted jobs finish, even if its UI disappears.
         worker = Task(priority: .utility) {
             while !jobs.isEmpty {
-                let job = jobs.removeFirst()
+                let entry = jobs.removeFirst()
+                let job = entry.job
+                defer { entry.scopedURLs.forEach(stopAccess) }
                 waitingCount = jobs.count
                 activeJob = job
                 do {

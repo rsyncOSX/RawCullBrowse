@@ -159,9 +159,14 @@ actor RAW9PreviewRenderer {
                                                        format: highDepth ? .RGBA16 : .RGBA8,
                                                        colorSpace: CGColorSpace(name: CGColorSpace.sRGB)!)
         else { throw CocoaError(.fileWriteUnknown) }
-        // Encode beside the destination and replace only after successful finalization.
-        let temporary = destination.deletingLastPathComponent().appendingPathComponent(".rawcull-export-" + UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: temporary) }
+        // A save-panel grant covers the destination, not arbitrary siblings.
+        // Foundation chooses a writable staging directory on the same volume.
+        let stagingDirectory = try FileManager.default.url(
+            for: .itemReplacementDirectory, in: .userDomainMask,
+            appropriateFor: destination, create: true,
+        )
+        let temporary = stagingDirectory.appendingPathComponent(destination.lastPathComponent)
+        defer { try? FileManager.default.removeItem(at: stagingDirectory) }
         if type == "com.ilm.openexr-image" {
             try context.writeOpenEXRRepresentation(of: ciImage, to: temporary, options: [:])
         } else if heif10 {

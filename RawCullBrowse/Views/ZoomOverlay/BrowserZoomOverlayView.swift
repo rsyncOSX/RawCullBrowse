@@ -415,6 +415,7 @@ struct BrowserZoomOverlayView: View {
     private func exportRAW(type: UTType, heif10: Bool = false) {
         guard let url = viewModel.selectedFile?.url else { return }
         let adjustments = viewModel.raw9Adjustments
+        let sourceAccessURL = viewModel.catalogAccessURL
         let panel = NSSavePanel()
         panel.allowedContentTypes = [type]
         panel.nameFieldStringValue = url.deletingPathExtension().lastPathComponent + "-edited." + (type.preferredFilenameExtension ?? "img")
@@ -428,7 +429,7 @@ struct BrowserZoomOverlayView: View {
             }
             exportQueue.enqueue(RAW9ExportJob(
                 source: url, adjustments: adjustments, destination: destination,
-                type: type.identifier, heif10: heif10,
+                type: type.identifier, heif10: heif10, sourceAccessURL: sourceAccessURL,
             ))
         }
     }

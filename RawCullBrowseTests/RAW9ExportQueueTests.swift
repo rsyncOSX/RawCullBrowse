@@ -1,4 +1,6 @@
 import Foundation
+import CoreGraphics
+import ImageIO
 @testable import RawCullBrowse
 import Testing
 
@@ -105,4 +107,51 @@ struct RAW9ExportQueueTests {
         #expect(queue.outstandingCount == 0)
         #expect(queue.lastError == nil)
     }
+    @Test @MainActor func `queued grants remain active and successful starts stop after failures`() async {
+        let probe = ExportProbe()
+        var starts: [URL] = []
+        var stops: [URL] = []
+        let root = URL(fileURLWithPath: "/tmp/catalog")
+        let queue = RAW9ExportQueue(
+            operation: { try await probe.run($0) },
+            startAccess: { starts.append($0); return $0.lastPathComponent != "fail" },
+            stopAccess: { stops.append($0) }
+        )
+        var first = job("first")
+        first.sourceAccessURL = root
+        var failure = job("fail")
+        failure.sourceAccessURL = root
+        queue.enqueue(first)
+        await probe.waitForStart()
+        queue.enqueue(failure)
+        #expect(starts == [root, first.destination, root, failure.destination])
+        #expect(stops.isEmpty)
+        await probe.release()
+        await queue.waitUntilFinished()
+        #expect(stops == [root, first.destination, root])
+        #expect(queue.lastError != nil)
+    }
+
+    @Test func `encoded export creates and replaces the chosen file`() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let destination = directory.appendingPathComponent("export.jpeg")
+        let context = try #require(CGContext(
+            data: nil, width: 2, height: 2, bitsPerComponent: 8, bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        let image = try #require(context.makeImage())
+        let renderer = RAW9PreviewRenderer()
+        try await renderer.writeExport(image: image, destination: destination, type: "public.jpeg")
+        let original = try Data(contentsOf: destination)
+        #expect(CGImageSourceCreateWithURL(destination as CFURL, nil) != nil)
+        try await renderer.writeExport(image: image, destination: destination, type: "public.jpeg")
+        await #expect(throws: (any Error).self) {
+            try await renderer.writeExport(image: image, destination: destination, type: "invalid.format")
+        }
+        #expect(try Data(contentsOf: destination) == original)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["export.jpeg"])
+    }
+
 }

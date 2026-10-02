@@ -6,6 +6,14 @@ import RawParserKit
 
 @Observable @MainActor
 final class FileBrowserViewModel {
+    isolated deinit {
+        // Release any session grants still held when the browser is discarded.
+        activeSecurityScopedURL?.stopAccessingSecurityScopedResource()
+        activeQwenModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
+        activeCLIPModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
+        activeSAM3ModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
+    }
+
     static let defaultQwenPrompt = "Evaluate the composition, exposure, subject visibility, expression, and obstructions."
 
     let deepAIReviewController = DeepAIReviewController()
@@ -205,11 +213,14 @@ final class FileBrowserViewModel {
         hasSelectedSAM3ModelFolder || managedCLIPModelLocations[.sam3] != nil
     }
 
-    /// Search and indexing use the catalog root even when a child folder is selected.
-    var clipCatalogURL: URL? {
-        guard let folderURL = selectedFolder?.url.standardizedFileURL else { return nil }
-        return securityScopedURL(for: folderURL).standardizedFileURL
+    /// File operations retain the granted catalog root, even for a child folder.
+    var catalogAccessURL: URL? {
+        guard let folderURL = selectedFolder?.url else { return nil }
+        return securityScopedURL(for: folderURL)
     }
+
+    /// Search and indexing use the catalog root even when a child folder is selected.
+    var clipCatalogURL: URL? { catalogAccessURL?.standardizedFileURL }
 
     var canIndexSelectedFolder: Bool {
         selectedFolder != nil
