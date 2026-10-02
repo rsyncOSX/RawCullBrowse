@@ -21,7 +21,7 @@ struct BrowserZoomOverlayView: View {
 
     @State private var cropSource: RAW9CropSource?
     @State private var isPreparingCrop = false
-    @State private var isExportingRAW = false
+    private let exportQueue = RAW9ExportQueue.shared
     @State private var rawExportError: String?
     @State private var isPickingWhiteBalance = false
     @State private var isSamplingWhiteBalance = false
@@ -343,7 +343,7 @@ struct BrowserZoomOverlayView: View {
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
             adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1 ... 1)
             Button("Crop", systemImage: "crop") { prepareCrop() }
-                .disabled(isPreparingCrop || isExportingRAW)
+                .disabled(isPreparingCrop)
                 .sheet(item: $cropSource) { source in
                     RAW9CropEditor(source: source, viewModel: viewModel)
                 }
@@ -360,16 +360,18 @@ struct BrowserZoomOverlayView: View {
                     }
                 }
             } label: {
-                Label(isExportingRAW ? "Exporting…" : "Export", systemImage: "square.and.arrow.up")
+                Label(exportQueue.outstandingCount > 0 ? "Export (\(exportQueue.outstandingCount))" : "Export", systemImage: "square.and.arrow.up")
             }
-            .disabled(isExportingRAW || isPreparingCrop)
-            .alert("RAW 9", isPresented: Binding(get: { rawExportError != nil }, set: {
+            .disabled(isPreparingCrop)
+            .help("Exports run in the background in request order, even after Zoom View closes.")
+            .alert("RAW 9", isPresented: Binding(get: { rawExportError != nil || exportQueue.lastError != nil }, set: {
                 if !$0 {
                     rawExportError = nil
+                    exportQueue.lastError = nil
                 }
             })) {
-                Button("OK") { rawExportError = nil }
-            } message: { Text(rawExportError ?? "") }
+                Button("OK") { rawExportError = nil; exportQueue.lastError = nil }
+            } message: { Text(rawExportError ?? exportQueue.lastError ?? "") }
             if let error = viewModel.raw9SidecarError {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.yellow)
@@ -424,13 +426,10 @@ struct BrowserZoomOverlayView: View {
                 rawExportError = "Choose a destination other than the original RAW or its sidecar."
                 return
             }
-            isExportingRAW = true
-            Task {
-                defer { isExportingRAW = false }
-                do {
-                    try await RAW9PreviewRenderer().export(url: url, adjustments: adjustments, destination: destination, type: type.identifier, heif10: heif10)
-                } catch { rawExportError = "Could not export: \(error.localizedDescription)" }
-            }
+            exportQueue.enqueue(RAW9ExportJob(
+                source: url, adjustments: adjustments, destination: destination,
+                type: type.identifier, heif10: heif10,
+            ))
         }
     }
 
