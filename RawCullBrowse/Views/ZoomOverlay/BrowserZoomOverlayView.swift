@@ -173,12 +173,19 @@ struct BrowserZoomOverlayView: View {
 
                 Spacer()
 
-                ScrollView(.horizontal) {
-                    zoomControlRow
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 8) {
+                    if viewModel.useDevelopedRAW,
+                       raw9SupportedURL != nil,
+                       raw9SupportedURL == viewModel.selectedFile?.url {
+                        centeredControlRow(height: 46) {
+                            rawAdjustmentControls
+                        }
+                    }
+
+                    centeredControlRow(height: 66) {
+                        zoomControlRow
+                    }
                 }
-                .scrollIndicators(.hidden)
-                .frame(height: 66)
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.horizontal, 18)
@@ -274,6 +281,17 @@ struct BrowserZoomOverlayView: View {
         }
     }
 
+    private func centeredControlRow<Content: View>(height: CGFloat, @ViewBuilder content: @escaping () -> Content) -> some View {
+        GeometryReader { geometry in
+            ScrollView(.horizontal) {
+                content()
+                    .frame(minWidth: geometry.size.width, minHeight: geometry.size.height)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .frame(height: height)
+    }
+
     private var rawAdjustmentControls: some View {
         HStack(spacing: 8) {
             adjustmentSlider("Exposure", value: $viewModel.raw9Adjustments.exposure, range: -3 ... 3)
@@ -321,11 +339,6 @@ struct BrowserZoomOverlayView: View {
 
     private var zoomControlRow: some View {
         HStack(spacing: 12) {
-            if viewModel.useDevelopedRAW,
-               raw9SupportedURL != nil,
-               raw9SupportedURL == viewModel.selectedFile?.url {
-                rawAdjustmentControls
-            }
             Picker("", selection: $viewModel.useDevelopedRAW) {
                 Text("JPG").tag(false)
                 Text(raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url ? "RAW 9" : "RAW").tag(true)
