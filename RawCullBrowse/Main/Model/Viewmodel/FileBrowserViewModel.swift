@@ -1253,7 +1253,6 @@ final class FileBrowserViewModel {
                             isRestoringRAW9Adjustments = true
                             raw9Adjustments = saved
                             isRestoringRAW9Adjustments = false
-                            useDevelopedRAW = true
                         }
                     } catch is CancellationError {
                         throw CancellationError()

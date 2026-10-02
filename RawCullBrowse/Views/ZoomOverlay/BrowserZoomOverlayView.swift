@@ -269,15 +269,12 @@ struct BrowserZoomOverlayView: View {
 
     private func scheduleRAWAdjustmentRefresh() {
         adjustmentRefreshTask?.cancel()
-        guard raw9SupportedURL == viewModel.selectedFile?.url, raw9SupportedURL != nil else { return }
+        guard viewModel.useDevelopedRAW,
+              raw9SupportedURL == viewModel.selectedFile?.url, raw9SupportedURL != nil else { return }
         adjustmentRefreshTask = Task {
             do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
             guard !Task.isCancelled else { return }
-            if viewModel.useDevelopedRAW {
-                viewModel.refreshRAW9Preview()
-            } else {
-                viewModel.useDevelopedRAW = true
-            }
+            viewModel.refreshRAW9Preview()
         }
     }
 
