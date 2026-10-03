@@ -146,6 +146,31 @@ make test-full
 
 ### App Store release
 
+Build, sign, and upload in one command:
+
+```sh
+./Scripts/release.sh internal   # Internal TestFlight testing only
+./Scripts/release.sh appstore   # TestFlight and eligible for App Store submission
+```
+
+The Makefile equivalents are `make upload-internal` and `make upload-app-store`.
+Sign in to your developer account in **Xcode Settings > Accounts** first.
+Both commands use the `Release` configuration, automatic signing, and pinned
+package versions. Archives and export diagnostics are preserved in `build/releases/`.
+They upload the build without submitting it for App Review or publishing it.
+
+Add `--dry-run` to preview either command. Xcode manages upload build numbers by
+default. To choose an unused build number explicitly for the app and extension,
+use `BUILD_NUMBER=13 ./Scripts/release.sh appstore`.
+For API authentication, set `ASC_KEY_PATH`, `ASC_KEY_ID`, and `ASC_ISSUER_ID`;
+keep the `.p8` key outside the repository.
+
+After Apple processes the build, assign it to an internal TestFlight group if
+automatic distribution is not enabled. An `internal` upload cannot be used for
+external TestFlight or App Store submission; choose `appstore` to submit the same
+tested build later.
+
+
 Create a Release archive and export it for App Store Connect:
 
 ```sh
