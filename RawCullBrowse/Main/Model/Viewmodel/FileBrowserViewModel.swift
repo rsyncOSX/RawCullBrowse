@@ -35,29 +35,53 @@ final class FileBrowserViewModel {
         didSet {
             guard !isRestoringRAW9Adjustments, raw9Adjustments != oldValue,
                   let url = raw9AdjustmentURL else { return }
-            let adjustments = raw9Adjustments
-            let previousSave = raw9SidecarSaveTask
-            if raw9SidecarSaveURL == url {
-                previousSave?.cancel()
-            }
-            raw9SidecarSaveURL = url
-            // Coalesce drag events, preserve write order across files, and finish
-            // the final save even after navigating away or closing zoom.
-            raw9SidecarSaveTask = Task {
-                await previousSave?.value
-                do {
-                    try await Task.sleep(for: .milliseconds(300))
-                    try Task.checkCancellation()
-                    try await raw9SidecarStore.save(adjustments, for: url)
-                    if raw9AdjustmentURL == url {
-                        raw9SidecarError = nil
-                    }
-                } catch is CancellationError {
-                    return
-                } catch {
-                    if raw9AdjustmentURL == url {
-                        raw9SidecarError = "Could not save RAW 9 sidecar: \(error.localizedDescription)"
-                    }
+            scheduleRAW9SidecarSave(for: url)
+        }
+    }
+
+    // Session memory survives navigation and closing/reopening the zoom overlay.
+    var copiedRAW9Adjustments: RAW9Adjustments?
+
+    func copyRAW9Adjustments() {
+        copiedRAW9Adjustments = raw9Adjustments
+    }
+
+    func pasteRAW9Adjustments() {
+        guard let adjustments = copiedRAW9Adjustments,
+              let url = selectedFile?.url, raw9AdjustmentURL == url else { return }
+        // A pending sidecar read must not replace pasted values, including defaults.
+        raw9LoadedSidecarURL = url
+        isRestoringRAW9Adjustments = true
+        raw9Adjustments = adjustments
+        isRestoringRAW9Adjustments = false
+        scheduleRAW9SidecarSave(for: url)
+        useDevelopedRAW = true
+        refreshRAW9Preview()
+    }
+
+    private func scheduleRAW9SidecarSave(for url: URL) {
+        let adjustments = raw9Adjustments
+        let previousSave = raw9SidecarSaveTask
+        if raw9SidecarSaveURL == url {
+            previousSave?.cancel()
+        }
+        raw9SidecarSaveURL = url
+        // Coalesce drag events, preserve write order across files, and finish
+        // the final save even after navigating away or closing zoom.
+        raw9SidecarSaveTask = Task {
+            await previousSave?.value
+            do {
+                try await Task.sleep(for: .milliseconds(300))
+                try Task.checkCancellation()
+                try await raw9SidecarStore.save(adjustments, for: url)
+                if raw9AdjustmentURL == url {
+                    raw9SidecarError = nil
+                }
+            } catch is CancellationError {
+                return
+            } catch {
+                if raw9AdjustmentURL == url {
+                    raw9SidecarError = "Could not save RAW 9 sidecar: \(error.localizedDescription)"
                 }
             }
         }
@@ -1259,12 +1283,12 @@ final class FileBrowserViewModel {
                     do {
                         let saved = try await raw9SidecarStore.load(for: selectedFile.url)
                         try Task.checkCancellation()
-                        raw9LoadedSidecarURL = selectedFile.url
-                        if raw9Adjustments == initialAdjustments, let saved {
+                        if raw9LoadedSidecarURL != selectedFile.url, raw9Adjustments == initialAdjustments, let saved {
                             isRestoringRAW9Adjustments = true
                             raw9Adjustments = saved
                             isRestoringRAW9Adjustments = false
                         }
+                        raw9LoadedSidecarURL = selectedFile.url
                     } catch is CancellationError {
                         throw CancellationError()
                     } catch {

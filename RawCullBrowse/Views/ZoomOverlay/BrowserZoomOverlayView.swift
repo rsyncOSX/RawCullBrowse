@@ -5,6 +5,16 @@ import UniformTypeIdentifiers
 struct BrowserZoomOverlayView: View {
     @Bindable var viewModel: FileBrowserViewModel
 
+    private var supportsRAW9: Bool {
+        raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url
+    }
+
+    private static let whiteBalanceCursor: NSCursor = {
+        let image = NSImage(systemSymbolName: "eyedropper", accessibilityDescription: "White balance picker")!
+        image.size = NSSize(width: 24, height: 24)
+        return NSCursor(image: image, hotSpot: NSPoint(x: 2, y: 22))
+    }()
+
     private var copyAction: (() -> [NSItemProvider])? {
         guard let file = viewModel.selectedFile else { return nil }
 
@@ -94,6 +104,14 @@ struct BrowserZoomOverlayView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .scaleEffect(viewModel.zoomScale)
                     .offset(viewModel.zoomOffset)
+                    .onContinuousHover { phase in
+                        switch phase {
+                        case .active:
+                            (isPickingWhiteBalance ? Self.whiteBalanceCursor : NSCursor.arrow).set()
+                        case .ended:
+                            NSCursor.arrow.set()
+                        }
+                    }
                     .gesture(zoomPanGesture)
                     .simultaneousGesture(SpatialTapGesture().onEnded { tap in
                         guard isPickingWhiteBalance else { return }
@@ -270,6 +288,7 @@ struct BrowserZoomOverlayView: View {
             adjustmentRefreshTask?.cancel()
             whiteBalanceTask?.cancel()
             removeKeyMonitor()
+            NSCursor.arrow.set()
             subjectOutline = nil
             isLoadingSubjectOutline = false
         }
@@ -288,6 +307,9 @@ struct BrowserZoomOverlayView: View {
                 cameraTint = balance.tint
             }
             raw9SupportedURL = supported ? url : nil
+        }
+        .onChange(of: isPickingWhiteBalance) {
+            if !isPickingWhiteBalance { NSCursor.arrow.set() }
         }
         .onChange(of: viewModel.raw9Adjustments) {
             guard !isEditingRAWAdjustment else { return }
@@ -320,8 +342,24 @@ struct BrowserZoomOverlayView: View {
         .frame(height: height)
     }
 
+    private var rawCopyPasteControls: some View {
+        HStack(spacing: 8) {
+            Button { viewModel.copyRAW9Adjustments() } label: {
+                Label("Copy", systemImage: "doc.on.doc")
+            }
+            .help("Copy RAW 9 adjustments (⌘C)")
+            Button { viewModel.pasteRAW9Adjustments() } label: {
+                Label("Paste", systemImage: "doc.on.clipboard")
+            }
+            .disabled(viewModel.copiedRAW9Adjustments == nil)
+            .help("Paste RAW 9 adjustments (⌘V)")
+        }
+        .disabled(!supportsRAW9)
+    }
+
     private var rawAdjustmentControls: some View {
         HStack(spacing: 8) {
+            rawCopyPasteControls
             adjustmentSlider("Temp K", value: Binding(
                 get: { viewModel.raw9Adjustments.temperature ?? cameraTemperature },
                 set: { viewModel.raw9Adjustments.temperature = $0 },
@@ -456,6 +494,9 @@ struct BrowserZoomOverlayView: View {
 
     private var zoomControlRow: some View {
         HStack(spacing: 12) {
+            if supportsRAW9, !viewModel.useDevelopedRAW {
+                rawCopyPasteControls
+            }
             Picker("", selection: $viewModel.useDevelopedRAW) {
                 Text("JPG").tag(false)
                 Text(raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url ? "RAW 9" : "RAW").tag(true)
@@ -759,7 +800,21 @@ struct BrowserZoomOverlayView: View {
         removeKeyMonitor()
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             guard viewModel.zoomOverlayVisible,
-                  event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
+                  !(NSApp.keyWindow?.firstResponder is NSText) else { return event }
+            let modifiers = event.modifierFlags.intersection([.command, .control, .option, .shift])
+            if modifiers == .command, supportsRAW9 {
+                switch event.charactersIgnoringModifiers?.lowercased() {
+                case "c":
+                    viewModel.copyRAW9Adjustments()
+                    return nil
+                case "v" where viewModel.copiedRAW9Adjustments != nil:
+                    viewModel.pasteRAW9Adjustments()
+                    return nil
+                default:
+                    return event
+                }
+            }
+            guard event.modifierFlags.intersection([.command, .control, .option]).isEmpty,
                   !(NSApp.keyWindow?.firstResponder is NSText) else { return event }
 
             return handleKeyEvent(event) == .handled ? nil : event
