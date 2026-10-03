@@ -97,14 +97,13 @@ struct RAW9SidecarStoreTests {
         #expect(adjustments.crop == nil)
         #expect(adjustments.shadowBoost == nil)
         #expect(adjustments.globalToneMap == nil)
-        #expect(adjustments.localToneMap == nil)
     }
 
     @Test func `tone adjustments round trip and reset to camera defaults`() async throws {
         let raw = try temporaryRAW()
         defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
         let store = RAW9SidecarStore()
-        let adjustments = RAW9Adjustments(shadowBoost: 1.4, globalToneMap: 0.8, localToneMap: 0.3)
+        let adjustments = RAW9Adjustments(shadowBoost: 1.4, globalToneMap: 0.8)
         try await store.save(adjustments, for: raw)
         #expect(try await store.load(for: raw) == adjustments)
         try await store.save(RAW9Adjustments(), for: raw)
@@ -113,8 +112,8 @@ struct RAW9SidecarStoreTests {
 
     @Test(arguments: [
         RAW9Adjustments(shadowBoost: -0.1), RAW9Adjustments(shadowBoost: 2.1),
-        RAW9Adjustments(globalToneMap: 1.1), RAW9Adjustments(localToneMap: -0.1),
-        RAW9Adjustments(shadowBoost: .infinity), RAW9Adjustments(localToneMap: .nan)
+        RAW9Adjustments(globalToneMap: 1.1),
+        RAW9Adjustments(shadowBoost: .infinity)
     ])
     func `rejects invalid tone adjustments`(adjustments: RAW9Adjustments) async throws {
         let raw = try temporaryRAW()

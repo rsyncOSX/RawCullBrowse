@@ -50,7 +50,6 @@ nonisolated struct RAW9Adjustments: Equatable, Sendable, Codable {
     var crop: RAW9Crop?
     var shadowBoost: Double?
     var globalToneMap: Double?
-    var localToneMap: Double?
 }
 
 /// Normalized coordinates in the oriented image, measured from the top left.
@@ -79,8 +78,6 @@ nonisolated struct RAW9Crop: Codable, Equatable, Sendable {
 nonisolated struct RAW9ToneDefaults: Sendable {
     var shadowBoost: Double = 1
     var globalToneMap: Double = 1
-    var localToneMap: Double = 0
-    var supportsLocalToneMap = false
 }
 
 /// Keeps the filter and its intermediate render cache off the main actor.
@@ -124,9 +121,7 @@ actor RAW9PreviewRenderer {
 
     private static func toneSettings(filter: CIRAWFilter) -> RAW9ToneDefaults {
         RAW9ToneDefaults(shadowBoost: Double(filter.boostShadowAmount),
-                         globalToneMap: Double(filter.boostAmount),
-                         localToneMap: Double(filter.localToneMapAmount),
-                         supportsLocalToneMap: filter.isLocalToneMapSupported)
+                         globalToneMap: Double(filter.boostAmount))
     }
 
     nonisolated static func previewScale(nativeSize: CGSize, maximumDimension: CGFloat?) -> Float {
@@ -157,9 +152,6 @@ actor RAW9PreviewRenderer {
         filter.exposure = Float(adjustments.exposure)
         filter.boostAmount = Float(adjustments.globalToneMap ?? toneDefaults.globalToneMap)
         filter.boostShadowAmount = Float(adjustments.shadowBoost ?? toneDefaults.shadowBoost)
-        if filter.isLocalToneMapSupported {
-            filter.localToneMapAmount = Float(adjustments.localToneMap ?? toneDefaults.localToneMap)
-        }
         // Full resolution remains the default for zoom and export; crop uses a smaller preview.
         filter.scaleFactor = Self.previewScale(nativeSize: filter.nativeSize, maximumDimension: maximumDimension)
         filter.luminanceNoiseReductionAmount = min(1, max(0, defaults.noise + Float(adjustments.noiseReduction)))
@@ -267,7 +259,6 @@ actor RAW9SidecarStore {
             && (value.tint.map { $0.isFinite && (-150 ... 150).contains($0) } ?? true)
             && (value.shadowBoost.map { $0.isFinite && (0 ... 2).contains($0) } ?? true)
             && (value.globalToneMap.map { $0.isFinite && (0 ... 1).contains($0) } ?? true)
-            && (value.localToneMap.map { $0.isFinite && (0 ... 1).contains($0) } ?? true)
             && value.exposure.isFinite && (-3 ... 3).contains(value.exposure)
             && value.noiseReduction.isFinite && (-1 ... 1).contains(value.noiseReduction)
             && value.sharpness.isFinite && (-1 ... 1).contains(value.sharpness)

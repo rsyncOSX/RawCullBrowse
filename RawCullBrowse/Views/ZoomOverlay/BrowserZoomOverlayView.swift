@@ -397,12 +397,6 @@ struct BrowserZoomOverlayView: View {
                 set: { viewModel.raw9Adjustments.globalToneMap = $0 }
             ), range: 0 ... 1)
             .help("Amount of the RAW 9 global tone curve")
-            adjustmentSlider("Local tone", value: Binding(
-                get: { viewModel.raw9Adjustments.localToneMap ?? toneDefaults.localToneMap },
-                set: { viewModel.raw9Adjustments.localToneMap = $0 }
-            ), range: 0 ... 1)
-            .disabled(!toneDefaults.supportsLocalToneMap)
-            .help(toneDefaults.supportsLocalToneMap ? "Amount of RAW 9 local tone mapping" : "Local tone mapping is unavailable for this image")
             Button { prepareCrop() } label: {
                 if isPreparingCrop {
                     HStack(spacing: 4) {
