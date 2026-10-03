@@ -1327,6 +1327,11 @@ final class FileBrowserViewModel {
         }
     }
 
+    func raw9ToneSettings() async throws -> RAW9ToneDefaults {
+        guard let url = selectedFile?.url else { throw CocoaError(.fileReadUnknown) }
+        return try await raw9Renderer.toneSettings(url: url)
+    }
+
     func raw9WhiteBalance(normalizedPoint: CGPoint? = nil) async throws -> (temperature: Double, tint: Double) {
         guard let url = selectedFile?.url else { throw CocoaError(.fileReadUnknown) }
         return try await raw9Renderer.whiteBalance(url: url, normalizedPoint: normalizedPoint)

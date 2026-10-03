@@ -38,6 +38,7 @@ struct BrowserZoomOverlayView: View {
     @State private var whiteBalanceTask: Task<Void, Never>?
     @State private var cameraTemperature: Double = 6500
     @State private var cameraTint: Double = 0
+    @State private var toneDefaults = RAW9ToneDefaults()
     @State private var raw9SupportedURL: URL?
     @State private var isEditingRAWAdjustment = false
     @State private var adjustmentRefreshTask: Task<Void, Never>?
@@ -298,6 +299,7 @@ struct BrowserZoomOverlayView: View {
             isPickingWhiteBalance = false
             isSamplingWhiteBalance = false
             raw9SupportedURL = nil
+            toneDefaults = RAW9ToneDefaults()
             guard let url = viewModel.selectedFile?.url else { return }
             let supported = await RAW9Support.isSupported(for: url)
             guard !Task.isCancelled else { return }
@@ -305,6 +307,10 @@ struct BrowserZoomOverlayView: View {
                 guard !Task.isCancelled, viewModel.selectedFile?.url == url else { return }
                 cameraTemperature = balance.temperature
                 cameraTint = balance.tint
+            }
+            if supported, let defaults = try? await viewModel.raw9ToneSettings() {
+                guard !Task.isCancelled, viewModel.selectedFile?.url == url else { return }
+                toneDefaults = defaults
             }
             raw9SupportedURL = supported ? url : nil
         }
@@ -380,6 +386,23 @@ struct BrowserZoomOverlayView: View {
             adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1 ... 1)
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
             adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1 ... 1)
+            adjustmentSlider("Shadows", value: Binding(
+                get: { viewModel.raw9Adjustments.shadowBoost ?? toneDefaults.shadowBoost },
+                set: { viewModel.raw9Adjustments.shadowBoost = $0 }
+            ), range: 0 ... 2)
+            .disabled((viewModel.raw9Adjustments.globalToneMap ?? toneDefaults.globalToneMap) == 0)
+            .help("RAW 9 shadow boost. Requires a nonzero global tone curve.")
+            adjustmentSlider("Tone", value: Binding(
+                get: { viewModel.raw9Adjustments.globalToneMap ?? toneDefaults.globalToneMap },
+                set: { viewModel.raw9Adjustments.globalToneMap = $0 }
+            ), range: 0 ... 1)
+            .help("Amount of the RAW 9 global tone curve")
+            adjustmentSlider("Local tone", value: Binding(
+                get: { viewModel.raw9Adjustments.localToneMap ?? toneDefaults.localToneMap },
+                set: { viewModel.raw9Adjustments.localToneMap = $0 }
+            ), range: 0 ... 1)
+            .disabled(!toneDefaults.supportsLocalToneMap)
+            .help(toneDefaults.supportsLocalToneMap ? "Amount of RAW 9 local tone mapping" : "Local tone mapping is unavailable for this image")
             Button { prepareCrop() } label: {
                 if isPreparingCrop {
                     HStack(spacing: 4) {
@@ -453,7 +476,7 @@ struct BrowserZoomOverlayView: View {
         Task {
             defer { isPreparingCrop = false }
             do {
-                let image = try await RAW9PreviewRenderer().render(url: url, adjustments: adjustments)
+                let image = try await RAW9PreviewRenderer().render(url: url, adjustments: adjustments, maximumDimension: 1280)
                 guard viewModel.selectedFile?.url == url else { return }
                 cropSource = RAW9CropSource(url: url, image: image, crop: viewModel.raw9Adjustments.crop)
             } catch { rawExportError = error.localizedDescription }

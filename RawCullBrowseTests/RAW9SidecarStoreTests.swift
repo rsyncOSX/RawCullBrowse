@@ -95,6 +95,39 @@ struct RAW9SidecarStoreTests {
         #expect(adjustments.temperature == nil)
         #expect(adjustments.tint == nil)
         #expect(adjustments.crop == nil)
+        #expect(adjustments.shadowBoost == nil)
+        #expect(adjustments.globalToneMap == nil)
+        #expect(adjustments.localToneMap == nil)
+    }
+
+    @Test func `tone adjustments round trip and reset to camera defaults`() async throws {
+        let raw = try temporaryRAW()
+        defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
+        let store = RAW9SidecarStore()
+        let adjustments = RAW9Adjustments(shadowBoost: 1.4, globalToneMap: 0.8, localToneMap: 0.3)
+        try await store.save(adjustments, for: raw)
+        #expect(try await store.load(for: raw) == adjustments)
+        try await store.save(RAW9Adjustments(), for: raw)
+        #expect(try await store.load(for: raw) == RAW9Adjustments())
+    }
+
+    @Test(arguments: [
+        RAW9Adjustments(shadowBoost: -0.1), RAW9Adjustments(shadowBoost: 2.1),
+        RAW9Adjustments(globalToneMap: 1.1), RAW9Adjustments(localToneMap: -0.1),
+        RAW9Adjustments(shadowBoost: .infinity), RAW9Adjustments(localToneMap: .nan)
+    ])
+    func `rejects invalid tone adjustments`(adjustments: RAW9Adjustments) async throws {
+        let raw = try temporaryRAW()
+        defer { try? FileManager.default.removeItem(at: raw.deletingLastPathComponent()) }
+        let store = RAW9SidecarStore()
+        await #expect(throws: (any Error).self) { try await store.save(adjustments, for: raw) }
+    }
+
+    @Test func `preview scaling caps dimensions without enlarging small images`() {
+        #expect(RAW9PreviewRenderer.previewScale(nativeSize: CGSize(width: 6000, height: 4000), maximumDimension: 1200) == 0.2)
+        #expect(RAW9PreviewRenderer.previewScale(nativeSize: CGSize(width: 4000, height: 6000), maximumDimension: 1200) == 0.2)
+        #expect(RAW9PreviewRenderer.previewScale(nativeSize: CGSize(width: 640, height: 480), maximumDimension: 1280) == 1)
+        #expect(RAW9PreviewRenderer.previewScale(nativeSize: CGSize(width: 6000, height: 4000), maximumDimension: nil) == 1)
     }
 
     @Test(arguments: [

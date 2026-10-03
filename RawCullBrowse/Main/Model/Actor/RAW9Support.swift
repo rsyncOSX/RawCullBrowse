@@ -48,6 +48,9 @@ nonisolated struct RAW9Adjustments: Equatable, Sendable, Codable {
     var temperature: Double?
     var tint: Double?
     var crop: RAW9Crop?
+    var shadowBoost: Double?
+    var globalToneMap: Double?
+    var localToneMap: Double?
 }
 
 /// Normalized coordinates in the oriented image, measured from the top left.
@@ -73,6 +76,13 @@ nonisolated struct RAW9Crop: Codable, Equatable, Sendable {
     }
 }
 
+nonisolated struct RAW9ToneDefaults: Sendable {
+    var shadowBoost: Double = 1
+    var globalToneMap: Double = 1
+    var localToneMap: Double = 0
+    var supportsLocalToneMap = false
+}
+
 /// Keeps the filter and its intermediate render cache off the main actor.
 actor RAW9PreviewRenderer {
     private var sourceURL: URL?
@@ -80,6 +90,7 @@ actor RAW9PreviewRenderer {
     private lazy var context = CIContext(options: [.cacheIntermediates: true])
     private var defaultTemperature: Float = 6500
     private var defaultTint: Float = 0
+    private var toneDefaults = RAW9ToneDefaults()
     private var defaults: (noise: Float, sharpness: Float, contrast: Float) = (0, 0, 0)
 
     /// Uses a separate filter so sampling cannot change the preview's cached defaults.
@@ -103,7 +114,28 @@ actor RAW9PreviewRenderer {
         return (min(50000, max(2000, temperature)), min(150, max(-150, tint)))
     }
 
-    func render(url: URL, adjustments: RAW9Adjustments, bitDepth: RAWPreviewBitDepth = .eightBit) throws -> CGImage {
+    func toneSettings(url: URL) throws -> RAW9ToneDefaults {
+        guard let sample = CIRAWFilter(imageURL: url),
+              let version = RAW9Support.preferredVersion(in: sample.supportedDecoderVersions)
+        else { throw CocoaError(.fileReadUnsupportedScheme) }
+        sample.decoderVersion = version
+        return Self.toneSettings(filter: sample)
+    }
+
+    private static func toneSettings(filter: CIRAWFilter) -> RAW9ToneDefaults {
+        RAW9ToneDefaults(shadowBoost: Double(filter.boostShadowAmount),
+                         globalToneMap: Double(filter.boostAmount),
+                         localToneMap: Double(filter.localToneMapAmount),
+                         supportsLocalToneMap: filter.isLocalToneMapSupported)
+    }
+
+    nonisolated static func previewScale(nativeSize: CGSize, maximumDimension: CGFloat?) -> Float {
+        guard let maximumDimension, maximumDimension > 0 else { return 1 }
+        return Float(min(1, maximumDimension / max(1, nativeSize.width, nativeSize.height)))
+    }
+
+    func render(url: URL, adjustments: RAW9Adjustments, bitDepth: RAWPreviewBitDepth = .eightBit,
+                maximumDimension: CGFloat? = nil) throws -> CGImage {
         try Task.checkCancellation()
         if sourceURL != url {
             filter = nil
@@ -115,6 +147,7 @@ actor RAW9PreviewRenderer {
             defaults = (loaded.luminanceNoiseReductionAmount, loaded.sharpnessAmount, loaded.contrastAmount)
             defaultTemperature = loaded.neutralTemperature
             defaultTint = loaded.neutralTint
+            toneDefaults = Self.toneSettings(filter: loaded)
             filter = loaded
             sourceURL = url
         }
@@ -122,6 +155,13 @@ actor RAW9PreviewRenderer {
         filter.neutralTemperature = adjustments.temperature.map(Float.init) ?? defaultTemperature
         filter.neutralTint = adjustments.tint.map(Float.init) ?? defaultTint
         filter.exposure = Float(adjustments.exposure)
+        filter.boostAmount = Float(adjustments.globalToneMap ?? toneDefaults.globalToneMap)
+        filter.boostShadowAmount = Float(adjustments.shadowBoost ?? toneDefaults.shadowBoost)
+        if filter.isLocalToneMapSupported {
+            filter.localToneMapAmount = Float(adjustments.localToneMap ?? toneDefaults.localToneMap)
+        }
+        // Full resolution remains the default for zoom and export; crop uses a smaller preview.
+        filter.scaleFactor = Self.previewScale(nativeSize: filter.nativeSize, maximumDimension: maximumDimension)
         filter.luminanceNoiseReductionAmount = min(1, max(0, defaults.noise + Float(adjustments.noiseReduction)))
         filter.sharpnessAmount = min(1, max(0, defaults.sharpness + Float(adjustments.sharpness)))
         filter.contrastAmount = min(1, max(0, defaults.contrast + Float(adjustments.contrast)))
@@ -225,6 +265,9 @@ actor RAW9SidecarStore {
         (value.crop.map(\.isValid) ?? true)
             && (value.temperature.map { $0.isFinite && (2000 ... 50000).contains($0) } ?? true)
             && (value.tint.map { $0.isFinite && (-150 ... 150).contains($0) } ?? true)
+            && (value.shadowBoost.map { $0.isFinite && (0 ... 2).contains($0) } ?? true)
+            && (value.globalToneMap.map { $0.isFinite && (0 ... 1).contains($0) } ?? true)
+            && (value.localToneMap.map { $0.isFinite && (0 ... 1).contains($0) } ?? true)
             && value.exposure.isFinite && (-3 ... 3).contains(value.exposure)
             && value.noiseReduction.isFinite && (-1 ... 1).contains(value.noiseReduction)
             && value.sharpness.isFinite && (-1 ... 1).contains(value.sharpness)
