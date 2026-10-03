@@ -8,7 +8,6 @@
 import SwiftUI
 
 struct MemoryTab: View {
-    @Environment(FileBrowserViewModel.self) private var viewModel
     @State private var memoryModel = MemoryViewModel()
 
     var body: some View {

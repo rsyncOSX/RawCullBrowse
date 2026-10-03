@@ -330,13 +330,6 @@ final class DeepAIReviewFeature {
         }
     }
 
-    func reset() {
-        cancel()
-        state = .idle
-        results = [:]
-        maskCandidatesByFileID = [:]
-    }
-
     private func receive(_ progress: DeepAIReviewProgress, generation: Int) {
         guard self.generation == generation, !Task.isCancelled else { return }
         state = .running(progress)

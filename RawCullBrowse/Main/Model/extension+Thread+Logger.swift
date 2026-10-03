@@ -8,35 +8,7 @@
 import Foundation
 import OSLog
 
-public extension Thread {
-    nonisolated static func checkIsMainThread() -> Bool {
-        Thread.isMainThread
-    }
-}
-
 extension Logger {
     private nonisolated static let subsystem = Bundle.main.bundleIdentifier
     nonisolated static let process = Logger(subsystem: subsystem ?? "process", category: "process")
-
-    func errorMessageOnly(_ message: String) {
-        #if DEBUG
-            error("\(message)")
-        #endif
-    }
-
-    nonisolated func debugMessageOnly(_ message: String) {
-        #if DEBUG
-            debug("\(message)")
-        #endif
-    }
-
-    nonisolated func debugThreadOnly(_ message: String) {
-        #if DEBUG
-            if Thread.checkIsMainThread() {
-                debug("\(message) Running on main thread")
-            } else {
-                debug("\(message) NOT on main thread, currently on \(Thread.current)")
-            }
-        #endif
-    }
 }

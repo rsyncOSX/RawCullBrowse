@@ -9,9 +9,6 @@ final class FileBrowserViewModel {
     isolated deinit {
         // Release any session grants still held when the browser is discarded.
         activeSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeQwenModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeCLIPModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeSAM3ModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
     }
 
     static let defaultQwenPrompt = "Evaluate the composition, exposure, subject visibility, expression, and obstructions."
@@ -130,12 +127,8 @@ final class FileBrowserViewModel {
     var semanticSearchActive = false
     var similaritySearchAnchorName: String?
     var isSearching = false
-    var isRunningSemanticTest = false
 
-    let addSemanticTest = false
 
-    var semanticTestProgress: SemanticSearchTestProgress?
-    var semanticTestOutcome: SemanticSearchTestOutcome?
     var hasCompatibleCLIPIndex = false
     var clipFeatureError: String?
     var qwenPrompt = defaultQwenPrompt
@@ -151,9 +144,7 @@ final class FileBrowserViewModel {
     var zoomOverlayNavigationAxis: ZoomOverlayNavigationAxis = .horizontal
 
     @ObservationIgnored private var activeSecurityScopedURL: URL?
-    @ObservationIgnored private var activeCLIPModelSecurityScopedURL: URL?
     @ObservationIgnored private var activeCLIPModelURL: URL?
-    @ObservationIgnored private var activeSAM3ModelSecurityScopedURL: URL?
     @ObservationIgnored private var activeSAM3ModelURL: URL?
     @ObservationIgnored private var scanTask: Task<Void, Never>?
     @ObservationIgnored private var thumbnailTask: Task<Void, Never>?
@@ -176,17 +167,14 @@ final class FileBrowserViewModel {
     @ObservationIgnored private var indexingTask: Task<Void, Never>?
     @ObservationIgnored private var indexValidationTask: Task<Void, Never>?
     @ObservationIgnored private var searchTask: Task<Void, Never>?
-    @ObservationIgnored private var semanticTestTask: Task<Void, Never>?
     @ObservationIgnored private var qwenValidationTask: Task<Void, Never>?
     @ObservationIgnored private var qwenResponseTask: Task<Void, Never>?
     @ObservationIgnored private var qwenRequestID = UUID()
-    @ObservationIgnored private var activeQwenModelSecurityScopedURL: URL?
     @ObservationIgnored private var activeQwenModelURL: URL?
     private var semanticFiles: [BrowserFileItem] = []
     @ObservationIgnored private var indexingID = UUID()
     @ObservationIgnored private var indexValidationID = UUID()
     @ObservationIgnored private var searchID = UUID()
-    @ObservationIgnored private var semanticTestID = UUID()
 
     var displayedFiles: [BrowserFileItem] {
         semanticSearchActive ? semanticFiles : files
@@ -200,10 +188,6 @@ final class FileBrowserViewModel {
         similaritySearchAnchorName != nil
     }
 
-    var clipModelPath: String? {
-        activeCLIPModelURL?.path
-    }
-
     var activeCLIPModelName: String {
         guard case let .available(_, _, modelName) = clipModelStatus else {
             return settings.selectedCLIPModel.displayName
@@ -211,30 +195,8 @@ final class FileBrowserViewModel {
         return modelName
     }
 
-    var selectedCLIPModel: CLIPManagedModel {
-        get { settings.selectedCLIPModel }
-        set {
-            guard settings.selectedCLIPModel != newValue else { return }
-            settings.selectedCLIPModel = newValue
-            persistSettings()
-            activateSelectedCLIPModel()
-        }
-    }
-
     var semanticSearchLimit: Int {
         settings.semanticSearchLimit
-    }
-
-    var hasSelectedCLIPModelFolder: Bool {
-        settings.clipModelPath != nil || settings.clipModelBookmarkData != nil
-    }
-
-    var hasSelectedSAM3ModelFolder: Bool {
-        settings.sam3ModelPath != nil || settings.sam3ModelBookmarkData != nil
-    }
-
-    var canValidateSAM3Model: Bool {
-        hasSelectedSAM3ModelFolder || managedCLIPModelLocations[.sam3] != nil
     }
 
     /// File operations retain the granted catalog root, even for a child folder.
@@ -253,7 +215,6 @@ final class FileBrowserViewModel {
             && clipProvider != nil
             && !isIndexing
             && !isSearching
-            && !isRunningSemanticTest
     }
 
     var canSearch: Bool {
@@ -261,7 +222,6 @@ final class FileBrowserViewModel {
             && clipEngine != nil
             && !isIndexing
             && !isSearching
-            && !isRunningSemanticTest
     }
 
     var canFindSimilar: Bool {
@@ -276,15 +236,6 @@ final class FileBrowserViewModel {
     var shouldPresentDeepReviewAction: Bool {
         !selectedFileIDs.isEmpty
             && sam3ModelStatus.isAvailable
-    }
-
-    var canRunSemanticTest: Bool {
-        hasCompatibleCLIPIndex
-            && clipEngine != nil
-            && selectedFolder != nil
-            && !isIndexing
-            && !isSearching
-            && !isRunningSemanticTest
     }
 
     var canAskQwen: Bool {
@@ -330,58 +281,6 @@ final class FileBrowserViewModel {
         await MemoryImageCache.shared.apply(settings: settings)
         activateSavedQwenModel()
         await refreshCLIPModels()
-    }
-
-    func setQwenModelURL(_ url: URL) {
-        let standardizedURL = url.standardizedFileURL
-        guard startQwenModelSecurityScopedAccess(for: standardizedURL) else {
-            qwenFeatureError = "RawCullBrowse could not access the selected Qwen model folder."
-            return
-        }
-        settings.qwenModelPath = standardizedURL.path
-        settings.qwenModelBookmarkData = try? standardizedURL.bookmarkData(
-            options: [.withSecurityScope],
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil,
-        )
-        persistSettings()
-        validateQwenModel(at: standardizedURL)
-    }
-
-    func validateQwenModelAgain() {
-        guard let url = resolvedQwenModelURL() else {
-            qwenValidationTask?.cancel()
-            qwenResponseTask?.cancel()
-            activeQwenModelURL = nil
-            isQwenResponding = false
-            Task { await qwenModelManager.clear() }
-            qwenModelStatus = .notConfigured
-            return
-        }
-        guard settings.qwenModelPath == nil || startQwenModelSecurityScopedAccess(for: url) else {
-            qwenModelStatus = .invalid(
-                url: url,
-                reason: "RawCullBrowse could not access the selected model folder.",
-            )
-            return
-        }
-        validateQwenModel(at: url)
-    }
-
-    func clearQwenModel() {
-        qwenValidationTask?.cancel()
-        qwenResponseTask?.cancel()
-        qwenRequestID = UUID()
-        activeQwenModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeQwenModelSecurityScopedURL = nil
-        activeQwenModelURL = nil
-        settings.qwenModelPath = nil
-        settings.qwenModelBookmarkData = nil
-        qwenModelStatus = .notConfigured
-        isQwenResponding = false
-        Task { await qwenModelManager.clear() }
-        persistSettings()
-        activateSavedQwenModel()
     }
 
     func askQwen() {
@@ -570,81 +469,6 @@ final class FileBrowserViewModel {
         }
     }
 
-    func setCLIPModelURL(_ url: URL) {
-        let standardizedURL = url.standardizedFileURL
-        guard startCLIPModelSecurityScopedAccess(for: standardizedURL) else {
-            clipModelStatus = .invalid(
-                url: standardizedURL,
-                reason: "RawCullBrowse could not access the selected CLIP model folder.",
-            )
-            return
-        }
-        settings.clipModelPath = standardizedURL.path
-        settings.clipModelBookmarkData = try? standardizedURL.bookmarkData(
-            options: [.withSecurityScope],
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil,
-        )
-        persistSettings()
-        validateCLIPModel(at: standardizedURL)
-    }
-
-    func validateCLIPModelAgain() {
-        activateSelectedCLIPModel(forceValidation: true)
-    }
-
-    func clearCLIPModel() {
-        modelValidationTask?.cancel()
-        indexingTask?.cancel()
-        indexValidationTask?.cancel()
-        searchTask?.cancel()
-        semanticTestTask?.cancel()
-        indexingID = UUID()
-        indexValidationID = UUID()
-        semanticTestID = UUID()
-        activeCLIPModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeCLIPModelSecurityScopedURL = nil
-        settings.clipModelPath = nil
-        settings.clipModelBookmarkData = nil
-        persistSettings()
-        deactivateCLIPModelRuntime()
-        activateSelectedCLIPModel()
-    }
-
-    func setSAM3ModelURL(_ url: URL) {
-        let standardizedURL = url.standardizedFileURL
-        guard startSAM3ModelSecurityScopedAccess(for: standardizedURL) else {
-            sam3ModelStatus = .invalid(
-                location: standardizedURL,
-                reason: "RawCullBrowse could not access the selected SAM 3 model folder.",
-            )
-            return
-        }
-        settings.sam3ModelPath = standardizedURL.path
-        settings.sam3ModelBookmarkData = try? standardizedURL.bookmarkData(
-            options: [.withSecurityScope],
-            includingResourceValuesForKeys: nil,
-            relativeTo: nil,
-        )
-        persistSettings()
-        validateSAM3Model(at: standardizedURL)
-    }
-
-    func validateSAM3ModelAgain() {
-        activateSelectedSAM3Model(forceValidation: true)
-    }
-
-    func clearSAM3Model() {
-        sam3ValidationTask?.cancel()
-        activeSAM3ModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeSAM3ModelSecurityScopedURL = nil
-        activeSAM3ModelURL = nil
-        settings.sam3ModelPath = nil
-        settings.sam3ModelBookmarkData = nil
-        persistSettings()
-        activateSelectedSAM3Model(forceValidation: true)
-    }
-
     func adjustSemanticSearchLimit(by delta: Int) {
         let adjusted = min(max(settings.semanticSearchLimit + delta, 10), 500)
         guard adjusted != settings.semanticSearchLimit else { return }
@@ -760,7 +584,6 @@ final class FileBrowserViewModel {
     }
 
     func startSemanticSearch() {
-        guard !isRunningSemanticTest else { return }
         let query = semanticSearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else {
             clearSemanticSearchResults()
@@ -852,89 +675,6 @@ final class FileBrowserViewModel {
         }
     }
 
-    func startSemanticTest() {
-        guard let directory = clipCatalogURL,
-              let engine = clipEngine,
-              hasCompatibleCLIPIndex
-        else {
-            clipFeatureError = CLIPFeatureError.missingCompatibleIndex.description
-            return
-        }
-        guard case let .available(_, fingerprint, modelName) = clipModelStatus else {
-            clipFeatureError = CLIPFeatureError.modelNotConfigured.description
-            return
-        }
-
-        semanticTestTask?.cancel()
-        searchTask?.cancel()
-        searchTask = nil
-        searchID = UUID()
-        isSearching = false
-
-        let operationID = UUID()
-        let limit = settings.semanticSearchLimit
-        semanticTestID = operationID
-        isRunningSemanticTest = true
-        semanticTestProgress = nil
-        semanticTestOutcome = nil
-        clipFeatureError = nil
-
-        semanticTestTask = Task { [weak self] in
-            guard let self else { return }
-            do {
-                let outcome = try await SemanticSearchTestRunner.run(
-                    directory: directory,
-                    modelName: modelName,
-                    modelFingerprint: fingerprint,
-                    resultLimit: limit,
-                    search: { [weak self] query, resultLimit in
-                        let results = try await engine.search(
-                            text: query,
-                            limit: resultLimit,
-                        )
-                        await self?.publishSemanticTestResults(
-                            query: query,
-                            results: results,
-                            operationID: operationID,
-                        )
-                        return results
-                    },
-                    similarity: { neighborLimit in
-                        try await engine.evaluateImageSimilarity(
-                            neighborLimit: neighborLimit,
-                        )
-                    },
-                    progress: { [weak self] progress in
-                        await self?.publishSemanticTestProgress(
-                            progress,
-                            operationID: operationID,
-                        )
-                    },
-                )
-                guard self.semanticTestID == operationID else { return }
-                self.semanticTestOutcome = outcome
-            } catch is CancellationError {
-                // The runner writes its last completed query before cancellation.
-            } catch {
-                guard self.semanticTestID == operationID else { return }
-                self.clipFeatureError = error.localizedDescription
-            }
-
-            guard self.semanticTestID == operationID else { return }
-            self.isRunningSemanticTest = false
-            self.semanticTestProgress = nil
-            self.semanticTestTask = nil
-        }
-    }
-
-    func cancelSemanticTest() {
-        semanticTestID = UUID()
-        semanticTestTask?.cancel()
-        semanticTestTask = nil
-        isRunningSemanticTest = false
-        semanticTestProgress = nil
-    }
-
     func clearSemanticSearchResults(keepingQuery: Bool = false) {
         searchID = UUID()
         searchTask?.cancel()
@@ -950,33 +690,6 @@ final class FileBrowserViewModel {
         selectedFileID = files.first?.id
         selectedFileIDs = Set(files.first.map { [$0.id] } ?? [])
         selectionAnchorFileID = files.first?.id
-    }
-
-    private func publishSemanticTestProgress(
-        _ progress: SemanticSearchTestProgress,
-        operationID: UUID,
-    ) {
-        guard semanticTestID == operationID else { return }
-        semanticTestProgress = progress
-        if let query = progress.currentQuery {
-            semanticSearchQuery = query
-        }
-    }
-
-    private func publishSemanticTestResults(
-        query: String,
-        results: [CLIPSearchResult],
-        operationID: UUID,
-    ) {
-        guard semanticTestID == operationID else { return }
-        semanticSearchQuery = query
-        semanticSearchActive = true
-        similaritySearchAnchorName = nil
-        semanticSearchResults = results
-        semanticFiles = results.map { BrowserFileItem(url: $0.url) }
-        selectedFileID = semanticFiles.first?.id
-        selectedFileIDs = Set(semanticFiles.first.map { [$0.id] } ?? [])
-        selectionAnchorFileID = semanticFiles.first?.id
     }
 
     func loadRememberedCatalogs() async {
@@ -1467,21 +1180,6 @@ final class FileBrowserViewModel {
         activeSecurityScopedURL = nil
     }
 
-    func stopQwenModelSecurityScopedAccess() {
-        activeQwenModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeQwenModelSecurityScopedURL = nil
-    }
-
-    func stopCLIPModelSecurityScopedAccess() {
-        activeCLIPModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeCLIPModelSecurityScopedURL = nil
-    }
-
-    func stopSAM3ModelSecurityScopedAccess() {
-        activeSAM3ModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeSAM3ModelSecurityScopedURL = nil
-    }
-
     private func activateSavedQwenModel() {
         guard let url = resolvedQwenModelURL() else {
             qwenValidationTask?.cancel()
@@ -1492,31 +1190,11 @@ final class FileBrowserViewModel {
             qwenModelStatus = .notConfigured
             return
         }
-        guard settings.qwenModelPath == nil || startQwenModelSecurityScopedAccess(for: url) else {
-            qwenModelStatus = .invalid(
-                url: url,
-                reason: "RawCullBrowse could not access the saved model folder.",
-            )
-            return
-        }
         validateQwenModel(at: url)
     }
 
     private func resolvedQwenModelURL() -> URL? {
         managedCLIPModelLocations[.qwen3VL2B]
-    }
-
-    private func startQwenModelSecurityScopedAccess(for url: URL) -> Bool {
-        let standardizedURL = url.standardizedFileURL
-        if activeQwenModelSecurityScopedURL == standardizedURL {
-            return true
-        }
-        guard standardizedURL.startAccessingSecurityScopedResource() else {
-            return false
-        }
-        activeQwenModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeQwenModelSecurityScopedURL = standardizedURL
-        return true
     }
 
     private func validateQwenModel(at url: URL) {
@@ -1585,22 +1263,7 @@ final class FileBrowserViewModel {
         return true
     }
 
-    private func resolvedCLIPModelURL() -> URL? {
-        if let bookmarkData = settings.clipModelBookmarkData {
-            var isStale = false
-            if let url = try? URL(
-                resolvingBookmarkData: bookmarkData,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale,
-            ) {
-                return url.standardizedFileURL
-            }
-        }
-        return settings.clipModelPath.map { URL(filePath: $0) }
-    }
-
-    private func activateSelectedCLIPModel(forceValidation: Bool = false) {
+    private func activateSelectedCLIPModel() {
         let selectedURL = managedCLIPModelLocations[settings.selectedCLIPModel.downloadID]
 
         guard let modelURL = selectedURL else {
@@ -1612,45 +1275,17 @@ final class FileBrowserViewModel {
         let isCurrentModelReady = activeCLIPModelURL == standardizedURL && clipProvider != nil
         let isCurrentModelBeingValidated = activeCLIPModelURL == standardizedURL
             && modelValidationTask != nil
-        guard forceValidation || (!isCurrentModelReady && !isCurrentModelBeingValidated) else { return }
+        guard !isCurrentModelReady && !isCurrentModelBeingValidated else { return }
 
         validateCLIPModel(at: standardizedURL)
     }
 
-    private func resolvedSAM3ModelURL() -> URL? {
-        if let bookmarkData = settings.sam3ModelBookmarkData {
-            var isStale = false
-            if let url = try? URL(
-                resolvingBookmarkData: bookmarkData,
-                options: [.withSecurityScope],
-                relativeTo: nil,
-                bookmarkDataIsStale: &isStale,
-            ) {
-                return url.standardizedFileURL
-            }
-        }
-        return settings.sam3ModelPath.map { URL(filePath: $0) }
-    }
-
-    private func activateSelectedSAM3Model(forceValidation: Bool = false) {
+    private func activateSelectedSAM3Model() {
         let selectedURL = managedCLIPModelLocations[.sam3]
 
         let standardizedURL = selectedURL?.standardizedFileURL
-        guard forceValidation || activeSAM3ModelURL != standardizedURL else { return }
+        guard activeSAM3ModelURL != standardizedURL else { return }
         validateSAM3Model(at: standardizedURL)
-    }
-
-    private func startSAM3ModelSecurityScopedAccess(for url: URL) -> Bool {
-        let standardizedURL = url.standardizedFileURL
-        if activeSAM3ModelSecurityScopedURL == standardizedURL {
-            return true
-        }
-        guard standardizedURL.startAccessingSecurityScopedResource() else {
-            return false
-        }
-        activeSAM3ModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeSAM3ModelSecurityScopedURL = standardizedURL
-        return true
     }
 
     private func validateSAM3Model(at url: URL?) {
@@ -1704,7 +1339,6 @@ final class FileBrowserViewModel {
         indexingTask?.cancel()
         indexValidationTask?.cancel()
         searchTask?.cancel()
-        semanticTestTask?.cancel()
         clipModelStatus = .notConfigured
         clipProvider = nil
         clipEngine = nil
@@ -1713,22 +1347,7 @@ final class FileBrowserViewModel {
         clipIndexStatus = selectedFolder == nil ? .noFolderSelected : .modelRequired
         isIndexing = false
         isSearching = false
-        isRunningSemanticTest = false
-        semanticTestProgress = nil
         clearSemanticSearchResults()
-    }
-
-    private func startCLIPModelSecurityScopedAccess(for url: URL) -> Bool {
-        let standardizedURL = url.standardizedFileURL
-        if activeCLIPModelSecurityScopedURL == standardizedURL {
-            return true
-        }
-        guard standardizedURL.startAccessingSecurityScopedResource() else {
-            return false
-        }
-        activeCLIPModelSecurityScopedURL?.stopAccessingSecurityScopedResource()
-        activeCLIPModelSecurityScopedURL = standardizedURL
-        return true
     }
 
     private func validateCLIPModel(at url: URL) {
@@ -1738,11 +1357,9 @@ final class FileBrowserViewModel {
         indexingTask?.cancel()
         indexValidationTask?.cancel()
         searchTask?.cancel()
-        semanticTestTask?.cancel()
         indexingID = UUID()
         indexValidationID = UUID()
         searchID = UUID()
-        semanticTestID = UUID()
         clipModelStatus = .checking(url)
         clipProvider = nil
         clipEngine = nil
@@ -1751,8 +1368,6 @@ final class FileBrowserViewModel {
         clipIndexStatus = selectedFolder == nil ? .noFolderSelected : .modelRequired
         isIndexing = false
         isSearching = false
-        isRunningSemanticTest = false
-        semanticTestProgress = nil
         clipFeatureError = nil
         clearSemanticSearchResults()
 
@@ -1821,19 +1436,15 @@ final class FileBrowserViewModel {
         indexingTask?.cancel()
         indexValidationTask?.cancel()
         searchTask?.cancel()
-        semanticTestTask?.cancel()
         indexingID = UUID()
         indexValidationID = UUID()
         searchID = UUID()
-        semanticTestID = UUID()
         clipEngine = nil
         clipEngineDirectoryURL = nil
         clipIndexStatus = .noFolderSelected
         hasCompatibleCLIPIndex = false
         isIndexing = false
-        isRunningSemanticTest = false
         indexingProgress = nil
-        semanticTestProgress = nil
         clearSemanticSearchResults()
     }
 

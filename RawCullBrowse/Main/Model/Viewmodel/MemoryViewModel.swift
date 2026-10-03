@@ -49,7 +49,6 @@ final class MemoryViewModel {
 
     deinit {
         memoryPressureSource?.cancel()
-        // Logger.process.debugMessageOnly("MemoryViewModel: deinitialized")
     }
 
     // MARK: - Computed percentages
@@ -89,11 +88,6 @@ final class MemoryViewModel {
             self.memoryPressureThreshold = threshold
         }
 
-        /*
-         let message = "MemoryViewModel: updateMemoryStats() Total: \(formatBytes(total)), " +
-             "Used: \(formatBytes(used)), App: \(formatBytes(app))"
-         Logger.process.debugMessageOnly(message)
-          */
     }
 
     // MARK: - Private helpers

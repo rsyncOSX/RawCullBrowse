@@ -153,7 +153,4 @@ final class DeepAIReviewController {
         feature.cancel()
     }
 
-    func reset() {
-        feature.reset()
-    }
 }
