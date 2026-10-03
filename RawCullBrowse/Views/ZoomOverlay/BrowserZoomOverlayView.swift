@@ -380,7 +380,17 @@ struct BrowserZoomOverlayView: View {
             adjustmentSlider("Noise", value: $viewModel.raw9Adjustments.noiseReduction, range: -1 ... 1)
             adjustmentSlider("Sharpness", value: $viewModel.raw9Adjustments.sharpness, range: -1 ... 1)
             adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1 ... 1)
-            Button("Crop", systemImage: "crop") { prepareCrop() }
+            Button { prepareCrop() } label: {
+                if isPreparingCrop {
+                    HStack(spacing: 4) {
+                        ProgressView()
+                            .controlSize(.mini)
+                        Text("Preparing crop…")
+                    }
+                } else {
+                    Label("Crop", systemImage: "crop")
+                }
+            }
                 .disabled(isPreparingCrop)
                 .sheet(item: $cropSource) { source in
                     RAW9CropEditor(source: source, viewModel: viewModel)
