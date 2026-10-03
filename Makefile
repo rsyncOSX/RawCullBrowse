@@ -172,3 +172,11 @@ open-debug:
 archive-app-store:
 	xcodebuild $(XCODE_RELEASE_FLAGS) archive -archivePath $(BUILD_PATH)/$(APP)-AppStore.xcarchive
 	xcodebuild -exportArchive -exportOptionsPlist exportOptionsAppStore.plist -archivePath $(BUILD_PATH)/$(APP)-AppStore.xcarchive -exportPath $(BUILD_PATH)/AppStore -allowProvisioningUpdates
+
+# Archive and upload directly to App Store Connect
+.PHONY: upload-internal upload-app-store
+upload-internal:
+	./Scripts/release.sh internal
+
+upload-app-store:
+	./Scripts/release.sh appstore
