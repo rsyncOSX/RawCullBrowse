@@ -109,6 +109,7 @@ struct BrowserZoomOverlayView: View {
                         switch phase {
                         case .active:
                             (isPickingWhiteBalance ? Self.whiteBalanceCursor : NSCursor.arrow).set()
+
                         case .ended:
                             NSCursor.arrow.set()
                         }
@@ -315,7 +316,9 @@ struct BrowserZoomOverlayView: View {
             raw9SupportedURL = supported ? url : nil
         }
         .onChange(of: isPickingWhiteBalance) {
-            if !isPickingWhiteBalance { NSCursor.arrow.set() }
+            if !isPickingWhiteBalance {
+                NSCursor.arrow.set()
+            }
         }
         .onChange(of: viewModel.raw9Adjustments) {
             guard !isEditingRAWAdjustment else { return }
@@ -388,15 +391,15 @@ struct BrowserZoomOverlayView: View {
             adjustmentSlider("Contrast", value: $viewModel.raw9Adjustments.contrast, range: -1 ... 1)
             adjustmentSlider("Shadows", value: Binding(
                 get: { viewModel.raw9Adjustments.shadowBoost ?? toneDefaults.shadowBoost },
-                set: { viewModel.raw9Adjustments.shadowBoost = $0 }
+                set: { viewModel.raw9Adjustments.shadowBoost = $0 },
             ), range: 0 ... 2)
-            .disabled((viewModel.raw9Adjustments.globalToneMap ?? toneDefaults.globalToneMap) == 0)
-            .help("RAW 9 shadow boost. Requires a nonzero global tone curve.")
+                .disabled((viewModel.raw9Adjustments.globalToneMap ?? toneDefaults.globalToneMap) == 0)
+                .help("RAW 9 shadow boost. Requires a nonzero global tone curve.")
             adjustmentSlider("Tone", value: Binding(
                 get: { viewModel.raw9Adjustments.globalToneMap ?? toneDefaults.globalToneMap },
-                set: { viewModel.raw9Adjustments.globalToneMap = $0 }
+                set: { viewModel.raw9Adjustments.globalToneMap = $0 },
             ), range: 0 ... 1)
-            .help("Amount of the RAW 9 global tone curve")
+                .help("Amount of the RAW 9 global tone curve")
             Button { prepareCrop() } label: {
                 if isPreparingCrop {
                     HStack(spacing: 4) {
@@ -408,10 +411,10 @@ struct BrowserZoomOverlayView: View {
                     Label("Crop", systemImage: "crop")
                 }
             }
-                .disabled(isPreparingCrop)
-                .sheet(item: $cropSource) { source in
-                    RAW9CropEditor(source: source, viewModel: viewModel)
-                }
+            .disabled(isPreparingCrop)
+            .sheet(item: $cropSource) { source in
+                RAW9CropEditor(source: source, viewModel: viewModel)
+            }
             Menu {
                 ForEach(RAW9PreviewRenderer.exportTypes, id: \.self) { identifier in
                     if let type = UTType(identifier) {
@@ -834,9 +837,11 @@ struct BrowserZoomOverlayView: View {
                 case "c":
                     viewModel.copyRAW9Adjustments()
                     return nil
+
                 case "v" where viewModel.copiedRAW9Adjustments != nil:
                     viewModel.pasteRAW9Adjustments()
                     return nil
+
                 default:
                     return event
                 }

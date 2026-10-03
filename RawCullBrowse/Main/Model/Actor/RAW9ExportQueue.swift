@@ -8,7 +8,7 @@ nonisolated struct RAW9ExportJob: Sendable {
     let destination: URL
     let type: String
     var heif10: Bool = false
-    var sourceAccessURL: URL? = nil
+    var sourceAccessURL: URL?
 }
 
 /// App-owned FIFO. Only queue bookkeeping runs on the main actor; the renderer
@@ -35,7 +35,7 @@ final class RAW9ExportQueue {
             try await performExport(job)
         },
         startAccess: @escaping (URL) -> Bool = { $0.startAccessingSecurityScopedResource() },
-        stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() }
+        stopAccess: @escaping (URL) -> Void = { $0.stopAccessingSecurityScopedResource() },
     ) {
         self.operation = operation
         self.startAccess = startAccess

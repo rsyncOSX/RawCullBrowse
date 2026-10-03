@@ -39,7 +39,7 @@ final class FileBrowserViewModel {
         }
     }
 
-    // Session memory survives navigation and closing/reopening the zoom overlay.
+    /// Session memory survives navigation and closing/reopening the zoom overlay.
     var copiedRAW9Adjustments: RAW9Adjustments?
 
     func copyRAW9Adjustments() {
@@ -244,7 +244,9 @@ final class FileBrowserViewModel {
     }
 
     /// Search and indexing use the catalog root even when a child folder is selected.
-    var clipCatalogURL: URL? { catalogAccessURL?.standardizedFileURL }
+    var clipCatalogURL: URL? {
+        catalogAccessURL?.standardizedFileURL
+    }
 
     var canIndexSelectedFolder: Bool {
         selectedFolder != nil

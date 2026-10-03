@@ -1,5 +1,5 @@
-import Foundation
 import CoreGraphics
+import Foundation
 import ImageIO
 @testable import RawCullBrowse
 import Testing
@@ -107,6 +107,7 @@ struct RAW9ExportQueueTests {
         #expect(queue.outstandingCount == 0)
         #expect(queue.lastError == nil)
     }
+
     @Test @MainActor func `queued grants remain active and successful starts stop after failures`() async {
         let probe = ExportProbe()
         var starts: [URL] = []
@@ -115,7 +116,7 @@ struct RAW9ExportQueueTests {
         let queue = RAW9ExportQueue(
             operation: { try await probe.run($0) },
             startAccess: { starts.append($0); return $0.lastPathComponent != "fail" },
-            stopAccess: { stops.append($0) }
+            stopAccess: { stops.append($0) },
         )
         var first = job("first")
         first.sourceAccessURL = root
@@ -139,7 +140,7 @@ struct RAW9ExportQueueTests {
         let destination = directory.appendingPathComponent("export.jpeg")
         let context = try #require(CGContext(
             data: nil, width: 2, height: 2, bitsPerComponent: 8, bytesPerRow: 0,
-            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue,
         ))
         let image = try #require(context.makeImage())
         let renderer = RAW9PreviewRenderer()
@@ -153,5 +154,4 @@ struct RAW9ExportQueueTests {
         #expect(try Data(contentsOf: destination) == original)
         #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["export.jpeg"])
     }
-
 }
