@@ -351,24 +351,8 @@ struct BrowserZoomOverlayView: View {
         .frame(height: height)
     }
 
-    private var rawCopyPasteControls: some View {
-        HStack(spacing: 8) {
-            Button { viewModel.copyRAW9Adjustments() } label: {
-                Label("Copy", systemImage: "doc.on.doc")
-            }
-            .help("Copy RAW 9 adjustments (⌘C)")
-            Button { viewModel.pasteRAW9Adjustments() } label: {
-                Label("Paste", systemImage: "doc.on.clipboard")
-            }
-            .disabled(viewModel.copiedRAW9Adjustments == nil)
-            .help("Paste RAW 9 adjustments (⌘V)")
-        }
-        .disabled(!supportsRAW9)
-    }
-
     private var rawAdjustmentControls: some View {
         HStack(spacing: 8) {
-            rawCopyPasteControls
             adjustmentSlider("Temp K", value: Binding(
                 get: { viewModel.raw9Adjustments.temperature ?? cameraTemperature },
                 set: { viewModel.raw9Adjustments.temperature = $0 },
@@ -524,9 +508,6 @@ struct BrowserZoomOverlayView: View {
 
     private var zoomControlRow: some View {
         HStack(spacing: 12) {
-            if supportsRAW9, !viewModel.useDevelopedRAW {
-                rawCopyPasteControls
-            }
             Picker("", selection: $viewModel.useDevelopedRAW) {
                 Text("JPG").tag(false)
                 Text(raw9SupportedURL != nil && raw9SupportedURL == viewModel.selectedFile?.url ? "RAW 9" : "RAW").tag(true)
