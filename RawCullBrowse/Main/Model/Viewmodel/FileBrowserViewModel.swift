@@ -166,6 +166,8 @@ final class FileBrowserViewModel {
     @ObservationIgnored private var sam3ValidationTask: Task<Void, Never>?
     @ObservationIgnored private var indexingTask: Task<Void, Never>?
     @ObservationIgnored private var indexValidationTask: Task<Void, Never>?
+    @ObservationIgnored private var catalogCLIPIndexes: [URL: (engine: CLIPSearchEngine, status: CLIPIndexStatus)] = [:]
+    @ObservationIgnored private var catalogIndexValidationTasks: [URL: Task<Void, Never>] = [:]
     @ObservationIgnored private var searchTask: Task<Void, Never>?
     @ObservationIgnored private var qwenValidationTask: Task<Void, Never>?
     @ObservationIgnored private var qwenResponseTask: Task<Void, Never>?
@@ -540,47 +542,73 @@ final class FileBrowserViewModel {
     }
 
     func validateSelectedFolderCLIPIndex() {
-        indexValidationTask?.cancel()
-        let validationID = UUID()
-        indexValidationID = validationID
-
         guard let directory = clipCatalogURL else {
             clipIndexStatus = .noFolderSelected
             hasCompatibleCLIPIndex = false
             return
         }
+        validateCatalogCLIPIndex(at: directory)
+    }
+
+    private func validateCatalogCLIPIndex(at directory: URL) {
         guard let provider = clipProvider else {
-            clipIndexStatus = .modelRequired
-            hasCompatibleCLIPIndex = false
+            if clipCatalogURL == directory {
+                clipIndexStatus = .modelRequired
+                hasCompatibleCLIPIndex = false
+            }
             return
         }
-
+        catalogIndexValidationTasks[directory]?.cancel()
         let engine = makeCLIPEngine(provider: provider, directory: directory)
-        clipEngine = engine
-        clipEngineDirectoryURL = directory
-        clipIndexStatus = .checking(directory)
-        hasCompatibleCLIPIndex = false
-
-        indexValidationTask = Task { [weak self] in
-            guard let self else { return }
+        catalogCLIPIndexes[directory] = (engine, .checking(directory))
+        if clipCatalogURL == directory {
+            useCatalogCLIPIndex(at: directory)
+        }
+        let task = Task { [weak self] in
             let status = await engine.validateIndex(directory: directory)
-            guard !Task.isCancelled,
-                  self.indexValidationID == validationID,
-                  self.clipCatalogURL == directory
-            else { return }
-            self.clipIndexStatus = status
-            self.hasCompatibleCLIPIndex = status.allowsSearch
+            guard let self, !Task.isCancelled else { return }
+            self.catalogCLIPIndexes[directory] = (engine, status)
             if let indexFileExists = status.indexFileExists {
                 self.setCLIPIndexPresence(indexFileExists, for: directory)
             }
-            if status.allowsSearch {
-                self.settings.lastIndexedDirectoryPath = directory.path
-                self.persistSettings()
-            } else {
-                self.clearSemanticSearchResults(keepingQuery: true)
+            if self.clipCatalogURL == directory {
+                self.useCatalogCLIPIndex(at: directory)
+                if status.allowsSearch {
+                    self.settings.lastIndexedDirectoryPath = directory.path
+                    self.persistSettings()
+                } else {
+                    self.clearSemanticSearchResults(keepingQuery: true)
+                }
             }
-            self.indexValidationTask = nil
+            self.catalogIndexValidationTasks[directory] = nil
+            if self.clipCatalogURL == directory {
+                self.indexValidationTask = nil
+            }
         }
+        catalogIndexValidationTasks[directory] = task
+        if clipCatalogURL == directory {
+            indexValidationTask = task
+        }
+    }
+
+    private func useCatalogCLIPIndex(at directory: URL) {
+        guard let cached = catalogCLIPIndexes[directory] else {
+            validateCatalogCLIPIndex(at: directory)
+            return
+        }
+        clipEngine = cached.engine
+        clipEngineDirectoryURL = directory
+        clipIndexStatus = cached.status
+        hasCompatibleCLIPIndex = cached.status.allowsSearch
+        indexValidationTask = catalogIndexValidationTasks[directory]
+    }
+
+    private func clearCatalogCLIPIndexes() {
+        for task in catalogIndexValidationTasks.values {
+            task.cancel()
+        }
+        catalogIndexValidationTasks.removeAll()
+        catalogCLIPIndexes.removeAll()
     }
 
     func startSemanticSearch() {
@@ -718,6 +746,9 @@ final class FileBrowserViewModel {
         rememberedCatalogs = loadedCatalogs
         rootFolders = uniqueFolders(loadedFolders)
         await loadChildren(for: rootFolders)
+        for folder in rootFolders {
+            validateCatalogCLIPIndex(at: folder.url.standardizedFileURL)
+        }
 
         if selectedFolder == nil, let firstCatalog = rootFolders.first {
             selectFolder(firstCatalog)
@@ -743,6 +774,7 @@ final class FileBrowserViewModel {
             }
         }
         rememberCatalog(at: standardizedURL)
+        catalogCLIPIndexes[standardizedURL] = nil
         selectFolder(folder)
     }
 
@@ -856,7 +888,9 @@ final class FileBrowserViewModel {
             selectionAnchorFileID = loadedFiles.first?.id
             isScanning = false
         }
-        validateSelectedFolderCLIPIndex()
+        if let directory = clipCatalogURL {
+            useCatalogCLIPIndex(at: directory)
+        }
     }
 
     private func loadChildrenIfNeeded(for folder: BrowserFolderItem) {
@@ -1118,6 +1152,7 @@ final class FileBrowserViewModel {
     }
 
     func clearRememberedCatalogs() async {
+        clearCatalogCLIPIndexes()
         scanTask?.cancel()
         thumbnailTask?.cancel()
         closeZoom()
@@ -1167,6 +1202,8 @@ final class FileBrowserViewModel {
         loadingFolderIDs = loadingFolderIDs.filter {
             !$0.standardizedFileURL.isEqualOrDescendant(of: catalogURL)
         }
+        catalogIndexValidationTasks.removeValue(forKey: catalogURL)?.cancel()
+        catalogCLIPIndexes.removeValue(forKey: catalogURL)
         rememberedCatalogs.removeValue(forKey: catalogURL)
         if activeSecurityScopedURL == catalogURL {
             stopActiveSecurityScopedAccess()
@@ -1334,6 +1371,7 @@ final class FileBrowserViewModel {
     }
 
     private func deactivateCLIPModelRuntime() {
+        clearCatalogCLIPIndexes()
         activeCLIPModelURL = nil
         modelValidationTask?.cancel()
         indexingTask?.cancel()
@@ -1351,6 +1389,7 @@ final class FileBrowserViewModel {
     }
 
     private func validateCLIPModel(at url: URL) {
+        clearCatalogCLIPIndexes()
         let url = url.standardizedFileURL
         activeCLIPModelURL = url
         modelValidationTask?.cancel()
@@ -1377,8 +1416,11 @@ final class FileBrowserViewModel {
             guard !Task.isCancelled, self.activeCLIPModelURL == url else { return }
             self.clipModelStatus = load.status
             self.clipProvider = load.provider
-            if self.selectedFolder != nil {
-                self.validateSelectedFolderCLIPIndex()
+            for folder in self.rootFolders {
+                self.validateCatalogCLIPIndex(at: folder.url.standardizedFileURL)
+            }
+            if let directory = self.clipCatalogURL {
+                self.useCatalogCLIPIndex(at: directory)
             } else if let provider = load.provider,
                       let directoryPath = self.settings.lastIndexedDirectoryPath {
                 await self.restoreCLIPEngine(
